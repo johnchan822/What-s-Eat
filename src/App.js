@@ -105,7 +105,6 @@ function MyComponent() {
             ...selectedRestaurant,
             directions: distanceText,
           };
-          console.log(updatedSelectedRestaurant)
             setSelectedRestaurant(updatedSelectedRestaurant);
 
             setTempList(prevTest =>{ 
@@ -203,9 +202,9 @@ function MyComponent() {
           center={currentPosition}
           zoom={16}>   
           <MarkerF position={currentPosition}></MarkerF>
-          {window.console.log(!isEmpty(selectedRestaurant?.location?.lat))}
         { 
-        (!isEmpty(selectedRestaurant?.location?.lat)) &&
+        
+        !isEmpty(selectedRestaurant?.location?.lat) &&
           <>
             <MarkerF position={selectedRestaurant?.location}></MarkerF>
             <DirectionsService
@@ -232,7 +231,7 @@ function MyComponent() {
                   "backgroundColor": "#e8dbf8"
                   }}>
                   <SignTurnSlightLeft size={20} className='mr-2'/>
-                  <div className="my-2 text-[16px] text-bold">點選導航：{selectedRestaurant.directions}</div>
+                  <div className="my-2 text-[14px] font-bold">點選導航：{selectedRestaurant.directions}</div>
                 </div>
                 <div className="flex flex-col">
                   <img src={selectedRestaurant?.img} 
@@ -246,11 +245,6 @@ function MyComponent() {
                   {selectedRestaurant?.name}
                    </div>
                 </div>
-                {/* <div className="font-bold py-1 border-1"
-                style={{
-                "backgroundColor": "#e8dbf8"
-                }}>
-                  導航</div> */}
               </div>
             </a>
             </InfoWindow>
@@ -358,7 +352,7 @@ function MyComponent() {
                       height: '33vh'
                     }}>
                           <div className="row pt-2 mx-2">
-                            <div className="col-2 font-bold text-[13px]">
+                              <div className="col-2 font-bold text-[13px]">
                               <div className="col">距離</div>
                               <div className="col">{ sliderValue >=1 ?`${sliderValue}KM`:`${sliderValue *1000}M`}</div>
                             </div>
@@ -376,7 +370,7 @@ function MyComponent() {
                               min={0}
                               valueLabelDisplay="auto"
                               defaultValue={20}/>
-                          </div>
+                            </div>
                           </div>
                           <div className="overflow-scroll h-100">
                               <div className="row px-4">
