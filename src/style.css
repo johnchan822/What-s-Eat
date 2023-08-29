@@ -1,0 +1,40 @@
+/* STEP 1: import normalize.css
+  https://unpkg.com/browse/normalize.css@8.0.1/normalize.css 
+*/
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+
+/* div[role="dialog"]{
+  background-color: red!important;
+} */
+
+/* .gm-style-iw-t{
+  background-color: red!important;
+} */
+.gm-style-iw-a{
+  /* background-color: red !important; */
+}
+.gm-style,.gm-style-iw-a:first-child{
+  display: none  !important;
+}
+.gm-style-iw.gm-style-iw-c,  .gm-style-iw-tc { margin-top: -30px; }
+
+.css-187mznn-MuiSlider-root {
+  color: #acecff !important;
+}
+
+.MuiSlider-root{
+  color:red;
+}
