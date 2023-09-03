@@ -3,7 +3,7 @@ import { XLg } from 'react-bootstrap-icons';
 
 const FavouriteItem =({node,selectedRestaurant ,setSelectedRestaurant ,filterLocalList,setLocalList})=>{
     return (
-        <div className={"flex justify-between cursor-pointer flex-nowrap rounded-lg my-2 py-2  items-center"}
+        <div className={"flex justify-between cursor-pointer flex-nowrap rounded-2 my-2 py-2  items-center"}
         style={{
             "border":  node?.name === selectedRestaurant?.name ? "1px black solid" : "1px solid #d1d1d1",
             "boxShadow": node?.name === selectedRestaurant?.name ? '6px 6px rgba(0,0,0,0.9)' :''

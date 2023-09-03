@@ -348,7 +348,7 @@ useEffect(()=>{
                   <div className="container-lg">
                   {{          
                     'history': 
-                    <div className="overflow-scroll px-4 mt-2"
+                    <div className="overflow-scroll px-2 mt-2"
                     style={{
                       height: '30vh'
                     }}>
