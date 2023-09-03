@@ -58,3 +58,27 @@ export const  getDistance = (distance,currentPosition) =>{
   }
     return delta
   };
+
+
+  const waitGoogleMapsLoaded = async () => {
+    while (!window.google || !window.google.maps || !window.google.maps.LatLng) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return true; // Google 地图已加载完成
+  };
+  
+//非同步問題
+  export const countDistance =  async (lat1, lng1, lat2, lng2) => {
+    const isGoogleMapsLoaded = await waitGoogleMapsLoaded();
+    if(isGoogleMapsLoaded){
+      
+      let location1 = new window.google.maps.LatLng(lat1, lng1);
+      let location2 = new window.google.maps.LatLng(lat2, lng2);
+      
+
+      let distance = window.google.maps.geometry.spherical.computeDistanceBetween(location1, location2);
+
+      return (distance / 1000)
+      
+    }
+  }

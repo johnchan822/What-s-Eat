@@ -12,7 +12,7 @@ import {SignTurnSlightLeft} from 'react-bootstrap-icons';
 import Tab from "./_parts/Tab";
 import SearchItem from "./_parts/SearchItem";
 import FavouriteItem from "./_parts/FavouriteItem";
-import  { isEmpty, removeDuplicates, getPhoto, getDistance}  from "./methods";
+import  { isEmpty, removeDuplicates, getPhoto, getDistance ,countDistance}  from "./methods";
 import { useAppState } from "./useAppState"; // 引入狀態管理
 
 const libraries = ["places"];
@@ -88,31 +88,65 @@ function MyComponent() {
       }
     );
     setLocalList(JSON.parse(localStorage.getItem('myData')))
-
-
-
     const timeoutId = setTimeout(() => {
         setOpeningScreen(true)
     }, 1000);
     return () => clearTimeout(timeoutId);
   }, []);
 
+
   useEffect(() => {
-        // 確保只在有需要時才更新 selectedRestaurant.directions 為空值 但是 selectedRestaurant要有值
-        if (!isEmpty(directions) && isEmpty(selectedRestaurant.directions) && !isEmpty(selectedRestaurant)) {
-          const distanceText = directions?.routes[0]?.legs[0]?.distance?.text;
+    // 確保只在有需要時才更新 selectedRestaurant.directions 為空值 但是 selectedRestaurant要有值
+    if (isEmpty(selectedRestaurant.directions) && !isEmpty(selectedRestaurant)) {
+
+      const handleDistanceCalculation = async () => {
+        try {
+          const result = await countDistance(
+            currentPosition?.lat,
+            currentPosition?.lng,
+            selectedRestaurant.location?.lat,
+            selectedRestaurant.location?.lng
+          );
+          const direction = parseFloat(result.toFixed(2));
           const updatedSelectedRestaurant = {
             ...selectedRestaurant,
-            directions: distanceText,
+            directions: direction,
           };
-            setSelectedRestaurant(updatedSelectedRestaurant);
-
-            setTempList(prevTest =>{ 
-              return  removeDuplicates([{...updatedSelectedRestaurant},...prevTest])
-            });
+          setSelectedRestaurant(updatedSelectedRestaurant);
+      
+          setTempList(prevTest => {
+            return removeDuplicates([{ ...updatedSelectedRestaurant }, ...prevTest]);
+          });
+        } catch (error) {
+          console.error("Error calculating distance:", error);
         }
-  }, [selectedRestaurant,directions]);
+      };
+      handleDistanceCalculation();
+    }
+}, [onPlaceChanged]);
 
+
+//
+useEffect(()=>{
+  //取得資料後 再去算距離
+   let localList = JSON.parse(localStorage.getItem('myData')) || []
+   const calculateDistances = async () => {
+      const newData = [];
+      for (const node of localList) {
+        const result = await countDistance(
+          currentPosition?.lat,
+          currentPosition?.lng,
+          node.location?.lat,
+          node.location?.lng
+        );
+        const direction = parseFloat(result.toFixed(2));
+        newData.push({ ...node, directions: direction });
+      }
+      setLocalList(newData);
+  };
+  calculateDistances()
+
+ },[])
 
   const bounds = useMemo(()=>{
     let delta = getDistance(2 ,currentPosition)
@@ -123,6 +157,7 @@ function MyComponent() {
       north: currentPosition.lat + delta.lat,
     }
    },[currentPosition])
+
 
   const directionsServiceOptions = useMemo(() => {
     return {
@@ -144,18 +179,14 @@ function MyComponent() {
     'bounds':bounds
   };
 
-
   //距離篩選
   let filterLocalList = useMemo(()=>{
-    const newData = localList?.map(node=>(
-      {
-        ...node,
-        countDirections : node.directions.split(' ')?.[0]
-      }
-    ))
-    return newData?.filter((node)=>{ return node.countDirections <= sliderValue })
+    if(isEmpty(localList)){
+      return 
+    }
+    return localList?.filter((node)=> node.directions <= sliderValue)
 
-  },[sliderValue,localList,currentPosition])
+  },[sliderValue,selectedRestaurant,localList])
 
   //輪盤資料
   let wheelData = useMemo(()=>{
@@ -177,6 +208,7 @@ function MyComponent() {
     }
 }, [setDirections]);
 
+
   const handleSpinClick = () => {
     const newPrizeNumber = Math.floor(Math.random() * wheelData?.length);
     setPrizeNumber(newPrizeNumber);
@@ -185,6 +217,8 @@ function MyComponent() {
     }) 
     setWheelShowText(false)
   };
+  
+
   
   return (
     isLoaded &&
@@ -231,7 +265,7 @@ function MyComponent() {
                   "backgroundColor": "#e8dbf8"
                   }}>
                   <SignTurnSlightLeft size={20} className='mr-2'/>
-                  <div className="my-2 text-[14px] font-bold">點選導航：{selectedRestaurant.directions}</div>
+                  <div className="my-2 text-[14px] font-bold">點選導航：約 {selectedRestaurant.directions}KM </div>
                 </div>
                 <div className="flex flex-col">
                   <img src={selectedRestaurant?.img} 

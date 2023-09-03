@@ -3,7 +3,8 @@ import { Star } from 'react-bootstrap-icons';
 import  { removeDuplicates, isEmpty}  from "../methods";
 
 const SearchItem =({node,selectedRestaurant ,setSelectedRestaurant ,localList, setLocalList})=>{
-  const existingItem = localList?.find(item => item?.name === node?.name);
+  console.log(localList)
+  const existingItem = localList?.find(item => item?.name === node?.name) ||  false
     return (
               <div className={"text-[14px] flex cursor-pointer my-2 flex-nowrap items-center justify-between rounded-2 py-2"}
               style={{
@@ -25,7 +26,7 @@ const SearchItem =({node,selectedRestaurant ,setSelectedRestaurant ,localList, s
                                   // 第一筆資料
                                 if(isEmpty(prevData)){
                                     localStorage.setItem('myData',  JSON.stringify([node]));
-                                    return node
+                                    return [node]
                                 }
                                 else{
                                     localStorage.setItem('myData',  JSON.stringify([node,...prevData]));
