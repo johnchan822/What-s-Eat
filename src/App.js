@@ -10,8 +10,7 @@ import './styles.scss'; // 导入您的Sass文件
 import iconImage from './img/icon.png'; // 請確保路徑是正確的
 import {SignTurnSlightLeft} from 'react-bootstrap-icons';
 import Tab from "./_parts/Tab";
-import SearchItem from "./_parts/SearchItem";
-import FavouriteItem from "./_parts/FavouriteItem";
+import Item from "./_parts/Item";
 import  { isEmpty, removeDuplicates, getPhoto, getDistance ,countDistance}  from "./methods";
 import { useAppState } from "./useAppState"; // 引入狀態管理
 
@@ -358,7 +357,7 @@ useEffect(()=>{
                             !isEmpty(tempList) ? 
                               tempList?.map((node,index)=>{
                                   return (
-                                  <SearchItem
+                                  <Item
                                   key={node.placeId}
                                   className="cursor-pointer"
                                   node={node}
@@ -412,7 +411,7 @@ useEffect(()=>{
                                   !isEmpty(filterLocalList)?
                                   filterLocalList?.map((node,index)=>{
                                     return(
-                                        <FavouriteItem 
+                                        <Item 
                                         key={index}
                                         node={node}
                                         selectedRestaurant={selectedRestaurant}

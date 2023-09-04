@@ -1,8 +1,9 @@
 
-import { Star } from 'react-bootstrap-icons';
+import { Star,XLg } from 'react-bootstrap-icons';
 import  { removeDuplicates, isEmpty}  from "../methods";
 
-const SearchItem =({node,selectedRestaurant ,setSelectedRestaurant ,localList, setLocalList})=>{
+const Item =({node,selectedRestaurant ,setSelectedRestaurant ,localList,filterLocalList, setLocalList, caseA})=>{
+
   const existingItem = localList?.find(item => item?.name === node?.name)
     return (
               <div className={"text-[14px] flex cursor-pointer my-2 flex-nowrap items-center justify-between rounded-2 py-2"}
@@ -10,11 +11,16 @@ const SearchItem =({node,selectedRestaurant ,setSelectedRestaurant ,localList, s
                 "border":  node?.name === selectedRestaurant?.name ? "1px black solid" : "1px solid #d1d1d1",
                 "boxShadow": node?.name === selectedRestaurant?.name ? '6px 6px rgba(0,0,0,0.9)' :''
               }}
-              onClick={()=>{
+              onClick={(e)=>{
+                e.stopPropagation()
                 setSelectedRestaurant({...node})
               }}>
                 {node?.name}
-                  <div className={`btn-sm btn-style`}
+
+              {  
+                caseA === 'Search' ?
+                  <div 
+                    className={`btn-sm btn-style`}
                     onClick={(e)=>{
                         e.stopPropagation()
                         //如果清單裡面有資料
@@ -39,9 +45,26 @@ const SearchItem =({node,selectedRestaurant ,setSelectedRestaurant ,localList, s
                         <Star size={18} />
                     </div>
                   </div>
+                  : <div 
+                    className={`btn-sm btn-style`}
+                    onClick={(e)=>{
+                    window.alert(`已刪除${node?.name}`)
+                    e.stopPropagation()
+                   setLocalList(filterLocalList.filter((filterNode)=>{
+                       return filterNode.name !== node.name
+                   }))
+                   if(node.name === selectedRestaurant){
+                           setSelectedRestaurant({})
+                   }
+                  }}>
+                       <div className="p-1 border rounded-2" style={{'background': '#f8dbdb'}} >
+                           <XLg color="info" size={18} />
+                       </div>
+               </div>
+              }
               </div>
 
     )
 }
 
-export default SearchItem;
+export default Item;
