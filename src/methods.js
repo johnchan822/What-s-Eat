@@ -60,25 +60,38 @@ export const  getDistance = (distance,currentPosition) =>{
   };
 
 
-  const waitGoogleMapsLoaded = async () => {
-    while (!window.google || !window.google.maps || !window.google.maps.LatLng) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    return true; // Google 地图已加载完成
-  };
-  
 //非同步問題
-  export const countDistance =  async (lat1, lng1, lat2, lng2) => {
-    const isGoogleMapsLoaded = await waitGoogleMapsLoaded();
-    if(isGoogleMapsLoaded){
-      
-      let location1 = new window.google.maps.LatLng(lat1, lng1);
-      let location2 = new window.google.maps.LatLng(lat2, lng2);
-      
+export const countDistance = async (lat1, lng1, lat2, lng2) => {
+  if (window.google && window.google.maps && window.google.maps.LatLng) {
+    const location1 = new window.google.maps.LatLng(lat1, lng1);
+    const location2 = new window.google.maps.LatLng(lat2, lng2);
 
-      let distance = window.google.maps.geometry.spherical.computeDistanceBetween(location1, location2);
+    const directionsService = new window.google.maps.DirectionsService();
 
-      return (distance / 1000)
-      
+    const request = {
+      origin: location1,
+      destination: location2,
+      travelMode: 'WALKING',
+    };
+
+    try {
+      const response = await new Promise((resolve, reject) => {
+        directionsService.route(request, (response, status) => {
+          if (status === 'OK') {
+            console.log(response)
+            resolve(response);
+          } else {
+            reject(new Error('无法获取路线：' + status));
+          }
+        });
+      });
+
+      const route = response.routes[0];
+      return route.legs[0].distance.text;
+    } catch (error) {
+      console.error(error);
+      return null; // 处理错误情况，返回 null 或其他适当的值
     }
   }
+  return null; // 处理 Google Maps 未加载的情况，返回 null 或其他适当的值
+};

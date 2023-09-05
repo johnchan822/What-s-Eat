@@ -96,31 +96,23 @@ function MyComponent() {
 
   useEffect(() => {
     // 確保只在有需要時才更新 selectedRestaurant.directions 為空值 但是 selectedRestaurant要有值
-    if (isEmpty(selectedRestaurant.directions) && !isEmpty(selectedRestaurant)) {
-
-      const handleDistanceCalculation = async () => {
-        try {
-          const result = await countDistance(
-            currentPosition?.lat,
-            currentPosition?.lng,
-            selectedRestaurant.location?.lat,
-            selectedRestaurant.location?.lng
-          );
-          const direction = parseFloat(result.toFixed(2));
-          const updatedSelectedRestaurant = {
-            ...selectedRestaurant,
-            directions: direction,
-          };
-          setSelectedRestaurant(updatedSelectedRestaurant);
-      
-          setTempList(prevTest => {
-            return removeDuplicates([{ ...updatedSelectedRestaurant }, ...prevTest]);
-          });
-        } catch (error) {
-          console.error("Error calculating distance:", error);
-        }
+    if (!isEmpty(directions) && isEmpty(selectedRestaurant.directions) && !isEmpty(selectedRestaurant)) {
+      const distanceText = directions?.routes[0]?.legs[0]?.distance?.text;
+      const updatedSelectedRestaurant = {
+        ...selectedRestaurant,
+        directions: distanceText,
       };
-      handleDistanceCalculation();
+      
+        // 检查 updatedSelectedRestaurant 是否已经存在于 tempList 中
+        const isDuplicate = tempList.some(item => item.placeId === updatedSelectedRestaurant.placeId);
+
+        if (!isDuplicate) {
+          setSelectedRestaurant(updatedSelectedRestaurant);
+
+          setTempList(prevTest => {
+            return [updatedSelectedRestaurant, ...prevTest];
+          });
+        }
     }
 }, [onPlaceChanged]);
 
@@ -138,14 +130,13 @@ useEffect(()=>{
           node.location?.lat,
           node.location?.lng
         );
-        const direction = parseFloat(result.toFixed(2));
-        newData.push({ ...node, directions: direction });
+        newData.push({ ...node, directions: result });
       }
       setLocalList(newData);
   };
   calculateDistances()
 
- },[])
+ },[currentPosition])
 
   const bounds = useMemo(()=>{
     let delta = getDistance(2 ,currentPosition)
@@ -179,13 +170,19 @@ useEffect(()=>{
   };
 
   //距離篩選
-  let filterLocalList = useMemo(()=>{
-    if(isEmpty(localList)){
-      return 
+   let filterLocalList = useMemo(()=>{
+    const newData = localList?.map((node)=>{
+    if(isEmpty(node.directions)){
+      return []
     }
-    return localList?.filter((node)=> node.directions <= sliderValue)
+    return ({
+            ...node,
+            directions : node.directions.split(' ')?.[0]})
+    })
 
-  },[sliderValue,selectedRestaurant,localList])
+    return newData?.filter((node)=>{ return node.directions <= sliderValue })
+
+  },[sliderValue,localList,currentPosition,setLocalList])
 
   //輪盤資料
   let wheelData = useMemo(()=>{
@@ -235,9 +232,9 @@ useEffect(()=>{
           center={currentPosition}
           zoom={16}>   
           <MarkerF position={currentPosition}></MarkerF>
+          
         { 
-        
-        !isEmpty(selectedRestaurant?.location?.lat) &&
+          !isEmpty(selectedRestaurant?.location?.lat) &&
           <>
             <MarkerF position={selectedRestaurant?.location}></MarkerF>
             <DirectionsService
@@ -264,7 +261,7 @@ useEffect(()=>{
                   "backgroundColor": "#e8dbf8"
                   }}>
                   <SignTurnSlightLeft size={20} className='mr-2'/>
-                  <div className="my-2 text-[14px] font-bold">點選導航：約 {selectedRestaurant.directions}KM </div>
+                  <div className="my-2 text-[14px] font-bold">點選導航：約 {selectedRestaurant.directions} KM</div>
                 </div>
                 <div className="flex flex-col">
                   <img src={selectedRestaurant?.img} 
@@ -294,7 +291,7 @@ useEffect(()=>{
               zIndex: '1',
               position: 'absolute',
               transform: 'translate(-50%, -50%)',
-              top:'4%',
+              top:'7%',
               left: '50%',
               width: '80vw',
           }}>
@@ -310,6 +307,10 @@ useEffect(()=>{
                     "fontWeight": 'bold'
                 }}
               />
+              <div class="bg-white w-20" 
+              onClick={()=>{
+                
+              }}>餐廳</div>
           </div>
         </Autocomplete>
       </GoogleMap>
@@ -324,14 +325,13 @@ useEffect(()=>{
                   tab={tab}
                   setTab={setTab}
                   setSelectedRestaurant={setSelectedRestaurant}
-                  tabName ={'history'}
-                  />
+                  tabName ={'history'}/>
+
                   <Tab
                   tab={tab}
                   setTab={setTab}
                   setSelectedRestaurant={setSelectedRestaurant}
-                  tabName ={'favourite'}
-                  />
+                  tabName ={'favourite'}/>
                   </div>
                   {
                     (!isEmpty(filterLocalList)&&  tab === 'favourite') && 
@@ -349,7 +349,9 @@ useEffect(()=>{
                     'history': 
                     <div className="overflow-scroll px-2 mt-2"
                     style={{
-                      height: '30vh'
+                      height: '30vh',
+                      position: 'sticky',
+                      bottom: '0'
                     }}>
                       <div className="p-2 h-100 w-100">
                         <div className="row p-2">
@@ -365,6 +367,7 @@ useEffect(()=>{
                                   setSelectedRestaurant={setSelectedRestaurant}
                                   localList={localList}
                                   setLocalList={setLocalList}
+                                  caseA={'Search'}
                                   />)
                                 })
                                 :<div className='font-bold'
@@ -382,7 +385,9 @@ useEffect(()=>{
                     </div>,
                     'favourite': <div
                     style={{
-                      height: '33vh'
+                      height: '33vh',
+                      position: 'sticky',
+                      bottom: '0'
                     }}>
                           <div className="row pt-2 mx-2">
                               <div className="col-2 font-bold text-[13px]">
@@ -390,7 +395,7 @@ useEffect(()=>{
                               <div className="col">{ sliderValue >=1 ?`${sliderValue}KM`:`${sliderValue *1000}M`}</div>
                             </div>
                             <div className="col-10">
-                            <Slider
+                              <Slider
                               aria-label="Temperature"
                               onChange={(e)=>{
                                 setSliderValue(e.target.value)
@@ -418,6 +423,7 @@ useEffect(()=>{
                                         setSelectedRestaurant= {setSelectedRestaurant}
                                         filterLocalList={filterLocalList}
                                         setLocalList={setLocalList}
+                                        caseA={'fav'}
                                     />)
                                   })
                                   : <div className='font-bold'
