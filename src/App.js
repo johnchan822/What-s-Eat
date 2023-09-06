@@ -59,7 +59,6 @@ function MyComponent() {
 
   const  onPlaceChanged = () => {
     const place = autocomplete?.getPlace();
-
     getPhoto(place?.place_id).then((imgUrl) =>{
           //這邊不能直接賦予值，需要使用parse轉換
           const copySelectedRestaurant = JSON.parse(
@@ -143,12 +142,11 @@ useEffect(()=>{
  },[currentPosition])
 
   const bounds = useMemo(()=>{
-    let delta = getDistance(2 ,currentPosition)
-    return{ 
-      east: currentPosition.lng + delta.lng,
-      west: currentPosition.lng - delta.lng,
-      south: currentPosition.lat - delta.lat,
-      north: currentPosition.lat + delta.lat,
+    return { 
+      'north': currentPosition.lat + 0.018,
+      'south': currentPosition.lat - 0.018,
+      'east': currentPosition.lng + 0.018,
+      'west': currentPosition.lng - 0.018
     }
    },[currentPosition])
 
@@ -236,17 +234,16 @@ useEffect(()=>{
           }}
           center={currentPosition}
           zoom={16}>   
-
-          <MarkerF position={currentPosition}></MarkerF>
+          <Marker position={currentPosition}></Marker>
           { 
               !isEmpty(searchList) &&
               searchList.map((item)=>{
               return  <Marker
               key={item.id}
-              icon= {{url: '/testtest'}}
+              icon= {{url: '/'}}
               position={{ lat: item.geometry.location.lat(), lng: item.geometry.location.lng() }}
               label={{
-              className: `bg-white p-2 rounded-md border-1 border-gray-950 ${ selectedRestaurant.name === item.name ?'opacity-0':''}`,
+              className: `bg-white p-1 rounded border-1 border-gray-950  ${ selectedRestaurant?.name == item?.name ? 'opacity-0' :''}`,
               text: item.name,
               color: 'black', 
               fontWeight: 'bold'}}

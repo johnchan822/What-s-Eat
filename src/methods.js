@@ -44,22 +44,6 @@ export const  removeDuplicates =(arr)=> {
     });
   };
 
-export const  getDistance = (distance,currentPosition) =>{
-  // 兩公里的範圍，單位：公里
-  const radius = 6371; // 地球的半徑，單位：公里
-  const latRadian = (Math.PI * currentPosition.lat) / 180; // 緯度的弧度值
-
-  const latDelta = (distance / radius) * (180 / Math.PI); // 計算緯度的差異
-  const lngDelta = (distance / radius) * (180 / Math.PI) / Math.cos(latRadian); // 計算經度的差異
-  
-  const delta = {
-    lat:latDelta,
-    lng:lngDelta
-  }
-    return delta
-  };
-
-
 //非同步問題
 export const countDistance = async (lat1, lng1, lat2, lng2) => {
   if (window.google && window.google.maps && window.google.maps.LatLng) {
