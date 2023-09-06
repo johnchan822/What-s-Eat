@@ -11,8 +11,10 @@ import iconImage from './img/icon.png'; // 請確保路徑是正確的
 import {SignTurnSlightLeft} from 'react-bootstrap-icons';
 import Tab from "./_parts/Tab";
 import Item from "./_parts/Item";
-import  { isEmpty, removeDuplicates, getPhoto, getDistance ,countDistance}  from "./methods";
+import  { isEmpty, removeDuplicates, getPhoto, getDistance ,countDistance }  from "./methods";
 import { useAppState } from "./useAppState"; // 引入狀態管理
+import { red } from '@mui/material/colors';
+import { renderToString } from 'react-dom/server';
 
 const libraries = ["places"];
 function MyComponent() {
@@ -50,23 +52,25 @@ function MyComponent() {
     directions,
     setDirections,
     openingScreen,
-    setOpeningScreen
+    setOpeningScreen,
   } = useAppState();
+
+  const [searchList, setSearchList] = useState([]);
 
   const  onPlaceChanged = () => {
     const place = autocomplete?.getPlace();
+
     getPhoto(place?.place_id).then((imgUrl) =>{
-        if (!isEmpty(place)) {
-          let selectedRestaurant = {
+          //這邊不能直接賦予值，需要使用parse轉換
+          const copySelectedRestaurant = JSON.parse(
+            JSON.stringify({
               location: place?.geometry?.location,
               placeId:place?.place_id,
               name:place?.name,
               img:imgUrl,
-          }
-          //這邊不能直接賦予值，需要使用parse轉換
-          const copySelectedRestaurant = JSON.parse(JSON.stringify(selectedRestaurant));
+            })
+          );
           setSelectedRestaurant(copySelectedRestaurant)
-        }
       })
       setTab('history')
       setInputValue('');
@@ -159,10 +163,12 @@ useEffect(()=>{
       travelMode: 'WALKING',
     };
   }, [currentPosition, selectedRestaurant]);
+
+
   
   const autocompleteOptions = {
     fields: ["address_components", "geometry", "name",'place_id'],
-    types: ["restaurant"],
+    types: ["restaurant",'food'],
     componentRestrictions: { country: "tw" },
     location: currentPosition,
     strictBounds: true,
@@ -215,7 +221,6 @@ useEffect(()=>{
   };
   
 
-  
   return (
     isLoaded &&
     <>
@@ -227,16 +232,41 @@ useEffect(()=>{
           className="relative"
           mapContainerStyle={{
             width: '100%',
-            height: '100vh'
+            height: '60vh'
           }}
           center={currentPosition}
           zoom={16}>   
+
           <MarkerF position={currentPosition}></MarkerF>
-          
+          { 
+              !isEmpty(searchList) &&
+              searchList.map((item)=>{
+              return  <Marker
+              key={item.id}
+              icon= {{url: '/testtest'}}
+              position={{ lat: item.geometry.location.lat(), lng: item.geometry.location.lng() }}
+              label={{
+              className: `bg-white p-2 rounded-md border-1 border-gray-950 ${ selectedRestaurant.name === item.name ?'opacity-0':''}`,
+              text: item.name,
+              color: 'black', 
+              fontWeight: 'bold'}}
+
+              onClick={()=>{
+                getPhoto(item.place_id).then((imgUrl)=>{
+                  setSelectedRestaurant({
+                    location:{ lat: item.geometry.location.lat(), lng: item.geometry.location.lng() },
+                    placeId:item.place_id,
+                    name:item.name,
+                    img:imgUrl,
+                  })
+                })
+            }}>
+              </Marker>
+            })
+          }
         { 
-          !isEmpty(selectedRestaurant?.location?.lat) &&
+          !isEmpty(selectedRestaurant?.location) &&
           <>
-            <MarkerF position={selectedRestaurant?.location}></MarkerF>
             <DirectionsService
               options={directionsServiceOptions}
               callback={directionsCallback}
@@ -261,7 +291,7 @@ useEffect(()=>{
                   "backgroundColor": "#e8dbf8"
                   }}>
                   <SignTurnSlightLeft size={20} className='mr-2'/>
-                  <div className="my-2 text-[14px] font-bold">點選導航：約 {selectedRestaurant.directions} KM</div>
+                  <div className="my-2 text-[14px] font-bold">點選導航：約 {selectedRestaurant.directions}</div>
                 </div>
                 <div className="flex flex-col">
                   <img src={selectedRestaurant?.img} 
@@ -291,29 +321,65 @@ useEffect(()=>{
               zIndex: '1',
               position: 'absolute',
               transform: 'translate(-50%, -50%)',
-              top:'7%',
+              top:'12%',
               left: '50%',
               width: '80vw',
           }}>
               <input
                 type="text"
-                className="h-10 w-100 searchInput p-3"
+                className="h-10 w-100 searchInput p-3 mb-2 rounded-1"
                 placeholder="請搜尋附近的餐廳"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 style={{
-                    "border": "2px #181818 solid",
+                    "border": "1.5px #181818 solid",
                     "background":'white',
                     "fontWeight": 'bold'
                 }}
               />
-              <div class="bg-white w-20" 
-              onClick={()=>{
-                
-              }}>餐廳</div>
+
+
+              <div className="flex justify-between">
+                <div className="bg-white px-3 py-1 rounded-1 text-[14px]"
+                style={{
+                  "border": "1px black solid" ,
+                  "background": 'white',
+                  "boxShadow": !isEmpty(searchList)? '4px 4px rgba(0,0,0,0.9)' :''
+                }} 
+                onClick={()=>{
+                  const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+                  const request = {
+                    location: { lat: currentPosition.lat, lng: currentPosition.lng }, 
+                    radius: 2000, 
+                    type: ['restaurant','foot'],
+                  };
+                  service.nearbySearch(request, (results, status) => {
+                    if (status ===  window.google.maps.places.PlacesServiceStatus.OK) {
+                      setSearchList(results)
+                    }
+                  });
+                }}>2KM 附近好吃的</div>
+
+                <div  className="p-1 rounded-1 text-[14px]"
+                style={{
+                  "border": "1px black solid" ,
+                  "background": 'white',
+                  "zIndex":'100'
+                }} 
+                onClick={()=>{
+                  setSearchList([])
+                  setSelectedRestaurant({})
+                }}> 清除
+                </div>
+              </div>
           </div>
+
+
         </Autocomplete>
+
       </GoogleMap>
+      <div>
+      </div>
         <div className="absolute w-100 fixed bottom-0 overflow-hidden">
             <div className="rounded-t-lg shadow-black">
                 <div className="bg-white pt-2"style={{

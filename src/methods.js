@@ -22,7 +22,7 @@ export const  removeDuplicates =(arr)=> {
     return uniqueObjects;
   }
 
- export const getPhoto = (placeId) => {
+ export const getPhoto = async(placeId) => {
     const service = new window.google.maps.places.PlacesService(document.createElement('div'));
     const request = {
       placeId: placeId,
@@ -73,25 +73,37 @@ export const countDistance = async (lat1, lng1, lat2, lng2) => {
       destination: location2,
       travelMode: 'WALKING',
     };
-
     try {
-      const response = await new Promise((resolve, reject) => {
-        directionsService.route(request, (response, status) => {
-          if (status === 'OK') {
-            console.log(response)
-            resolve(response);
-          } else {
-            reject(new Error('无法获取路线：' + status));
-          }
-        });
-      });
-
-      const route = response.routes[0];
-      return route.legs[0].distance.text;
+      const response = await directionsService.route(request);
+      if (response.status === 'OK') {
+        const route = response.routes[0];
+        return route.legs[0].distance.text;
+      } else {
+        throw new Error('没有路線' + response.status);
+      }
     } catch (error) {
       console.error(error);
-      return null; // 处理错误情况，返回 null 或其他适当的值
+      return null;
     }
   }
   return null; // 处理 Google Maps 未加载的情况，返回 null 或其他适当的值
 };
+
+export  const  test  =  async(lat1, lng1) =>{
+  const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+
+  const request = {
+    location: { lat: lat1, lng: lng1 }, // 搜尋中心點的位置
+    radius: 2000, // 搜尋半徑（2公里）
+    type: ['restaurant'], // 指定要搜索的地點類型（餐廳）
+  };
+
+  service.nearbySearch(request, (results, status) => {
+    if (status ===  window.google.maps.places.PlacesServiceStatus.OK) {
+      // 在results中包含所在地附近的餐廳
+      for (const place of results) {
+        return place; // 打印餐廳名稱
+      }
+    }
+  });
+}
