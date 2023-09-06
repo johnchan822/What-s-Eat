@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/What-s-Eat/static/css/main.227e21f1.css",
-    "main.js": "/What-s-Eat/static/js/main.6f9704f4.js",
+    "main.js": "/What-s-Eat/static/js/main.cfce7bc0.js",
     "static/media/icon.png": "/What-s-Eat/static/media/icon.a5d2973dd266c98e6cae.png",
     "index.html": "/What-s-Eat/index.html",
     "main.227e21f1.css.map": "/What-s-Eat/static/css/main.227e21f1.css.map",
-    "main.6f9704f4.js.map": "/What-s-Eat/static/js/main.6f9704f4.js.map"
+    "main.cfce7bc0.js.map": "/What-s-Eat/static/js/main.cfce7bc0.js.map"
   },
   "entrypoints": [
     "static/css/main.227e21f1.css",
-    "static/js/main.6f9704f4.js"
+    "static/js/main.cfce7bc0.js"
   ]
 }
