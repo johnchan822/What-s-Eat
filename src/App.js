@@ -227,6 +227,7 @@ useEffect(()=>{
         <GoogleMap
           id="map"
           ref={mapElementRef}
+          clickableIcons={false}
           className="relative"
           mapContainerStyle={{
             width: '100%',
@@ -234,7 +235,7 @@ useEffect(()=>{
           }}
           center={currentPosition}
           zoom={16}>   
-          <Marker position={currentPosition}></Marker>
+          <MarkerF position={currentPosition}></MarkerF>
           { 
               !isEmpty(searchList) &&
               searchList.map((item)=>{
