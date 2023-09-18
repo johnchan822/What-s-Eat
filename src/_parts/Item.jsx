@@ -2,11 +2,11 @@
 import { Star,XLg } from 'react-bootstrap-icons';
 import  { removeDuplicates, isEmpty}  from "../methods";
 
-const Item =({node,selectedRestaurant ,setSelectedRestaurant ,localList,filterLocalList, setLocalList, caseA})=>{
+const Item =({node,selectedRestaurant ,setSelectedRestaurant ,localList,filterLocalList, setLocalList, type})=>{
 
   const existingItem = localList?.find(item => item?.name === node?.name)
     return (
-              <div className={"text-[14px] flex cursor-pointer my-2 flex-nowrap items-center justify-between rounded-2 py-2"}
+              <div className={"text-[14px] flex cursor-pointer m-2 mb-3 flex-nowrap items-center justify-between rounded-2 p-2"}
               style={{
                 "border":  node?.name === selectedRestaurant?.name ? "1px black solid" : "1px solid #d1d1d1",
                 "boxShadow": node?.name === selectedRestaurant?.name ? '6px 6px rgba(0,0,0,0.9)' :''
@@ -18,7 +18,7 @@ const Item =({node,selectedRestaurant ,setSelectedRestaurant ,localList,filterLo
                 {node?.name}
 
               {  
-                caseA === 'Search' ?
+                type === 'Search' ?
                   <div 
                     className={`btn-sm btn-style`}
                     onClick={(e)=>{

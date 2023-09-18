@@ -8,6 +8,7 @@ import { Wheel } from 'react-custom-roulette'
 import './styles.scss'; // 导入您的Sass文件
 
 import iconImage from './img/icon.png'; // 請確保路徑是正確的
+import iconStar from './img/star.png'; // 請確保路徑是正確的
 import {SignTurnSlightLeft} from 'react-bootstrap-icons';
 import Tab from "./_parts/Tab";
 import Item from "./_parts/Item";
@@ -97,27 +98,29 @@ function MyComponent() {
   }, []);
 
 
+
+  //TODO:
   useEffect(() => {
     // 確保只在有需要時才更新 selectedRestaurant.directions 為空值 但是 selectedRestaurant要有值
     if (!isEmpty(directions) && isEmpty(selectedRestaurant.directions) && !isEmpty(selectedRestaurant)) {
-      const distanceText = directions?.routes[0]?.legs[0]?.distance?.text;
+      const distanceText = directions.routes[0].legs[0].distance.text
+
       const updatedSelectedRestaurant = {
         ...selectedRestaurant,
         directions: distanceText,
       };
       
-        // 检查 updatedSelectedRestaurant 是否已经存在于 tempList 中
-        const isDuplicate = tempList.some(item => item.placeId === updatedSelectedRestaurant.placeId);
-
+        // 检查 updatedSelected
+        // Restaurant 是否已经存在
+        const isDuplicate = tempList.some(item => item.placeId === updatedSelectedRestaurant.placeId)
+        setSelectedRestaurant(updatedSelectedRestaurant);
         if (!isDuplicate) {
-          setSelectedRestaurant(updatedSelectedRestaurant);
-
           setTempList(prevTest => {
             return [updatedSelectedRestaurant, ...prevTest];
           });
         }
     }
-}, [onPlaceChanged]);
+}, [onPlaceChanged,setSelectedRestaurant ,selectedRestaurant]);
 
 
 //
@@ -143,10 +146,10 @@ useEffect(()=>{
 
   const bounds = useMemo(()=>{
     return { 
-      'north': currentPosition.lat + 0.018,
-      'south': currentPosition.lat - 0.018,
-      'east': currentPosition.lng + 0.018,
-      'west': currentPosition.lng - 0.018
+      'north': currentPosition.lat + 0.008,
+      'south': currentPosition.lat - 0.008,
+      'east': currentPosition.lng + 0.008,
+      'west': currentPosition.lng - 0.008
     }
    },[currentPosition])
 
@@ -179,12 +182,13 @@ useEffect(()=>{
     if(isEmpty(node.directions)){
       return []
     }
+    const  editDistance =  Number(node.directions.split(' ')?.[0] )
     return ({
             ...node,
-            directions : node.directions.split(' ')?.[0]})
+            directionNumber : node.directions.includes('公里') ? editDistance :  editDistance / 1000     })
     })
 
-    return newData?.filter((node)=>{ return node.directions <= sliderValue })
+    return newData?.filter((node)=>{ return node.directionNumber <= sliderValue })
 
   },[sliderValue,localList,currentPosition,setLocalList])
 
@@ -215,7 +219,7 @@ useEffect(()=>{
     setTimeout(()=>{
       setMustSpin(true);
     }) 
-    setWheelShowText(false)
+      setWheelShowText(false)
   };
   
 
@@ -231,7 +235,7 @@ useEffect(()=>{
           className="relative"
           mapContainerStyle={{
             width: '100%',
-            height: '60vh'
+            height: '75vh'
           }}
           center={currentPosition}
           zoom={16}>   
@@ -239,15 +243,23 @@ useEffect(()=>{
           { 
               !isEmpty(searchList) &&
               searchList.map((item)=>{
-              return  <Marker
-              key={item.id}
-              icon= {{url: '/'}}
-              position={{ lat: item.geometry.location.lat(), lng: item.geometry.location.lng() }}
-              label={{
-              className: `bg-white p-1 rounded border-1 border-gray-950  ${ selectedRestaurant?.name == item?.name ? 'opacity-0' :''}`,
-              text: item.name,
-              color: 'black', 
-              fontWeight: 'bold'}}
+                const localListNames = localList.map((node)=>node.name)
+                const itemNameSplit =   item.name.split('').length > 8  ? item.name.slice(0, 8)+'...' :  item.name ;
+                
+                return  <Marker
+                key={item.id}
+                icon={{
+                  url: '/',
+                  scaledSize: new window.google.maps.Size(120, 50) // 指定宽度和高度
+                }}
+
+                position={{ lat: item.geometry.location.lat(), lng: item.geometry.location.lng() }}
+                label={{
+                className: `bg-white  rounded border-1  p-1  border-gray-950  cursor-pointer ${ selectedRestaurant?.name == item?.name ? 'opacity-0' :''}`,
+                text: `${ localListNames.includes(item.name) ? "＊" + itemNameSplit + "＊" : itemNameSplit}`,
+                color: 'black', 
+                fontWeight: 'bold',
+                fontSize:'14px'}}
 
               onClick={()=>{
                 getPhoto(item.place_id).then((imgUrl)=>{
@@ -258,7 +270,10 @@ useEffect(()=>{
                     img:imgUrl,
                   })
                 })
-            }}>
+              }}>
+
+            
+
               </Marker>
             })
           }
@@ -288,8 +303,9 @@ useEffect(()=>{
                  style={{
                   "backgroundColor": "#e8dbf8"
                   }}>
-                  <SignTurnSlightLeft size={20} className='mr-2'/>
-                  <div className="my-2 text-[14px] font-bold">點選導航：約 {selectedRestaurant.directions}</div>
+                  <div className="m-2 text-[14px] font-bold flex">
+                    <SignTurnSlightLeft size={20} className='mr-2'/> 點選導航：約 {selectedRestaurant.directions}
+                  </div>
                 </div>
                 <div className="flex flex-col">
                   <img src={selectedRestaurant?.img} 
@@ -319,13 +335,13 @@ useEffect(()=>{
               zIndex: '1',
               position: 'absolute',
               transform: 'translate(-50%, -50%)',
-              top:'12%',
+              top:'9%',
               left: '50%',
               width: '80vw',
           }}>
               <input
                 type="text"
-                className="h-10 w-100 searchInput p-3 mb-2 rounded-1"
+                className="h-10 w-100 searchInput p-3 mb-1 rounded-1"
                 placeholder="請搜尋附近的餐廳"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -348,15 +364,15 @@ useEffect(()=>{
                   const service = new window.google.maps.places.PlacesService(document.createElement('div'));
                   const request = {
                     location: { lat: currentPosition.lat, lng: currentPosition.lng }, 
-                    radius: 2000, 
-                    type: ['restaurant','foot'],
+                    radius: 950, 
+                    type: ['restaurant'],
                   };
                   service.nearbySearch(request, (results, status) => {
                     if (status ===  window.google.maps.places.PlacesServiceStatus.OK) {
                       setSearchList(results)
                     }
                   });
-                }}>2KM 附近好吃的</div>
+                }}>1KM 附近好吃的</div>
 
                 <div  className="p-1 rounded-1 text-[14px]"
                 style={{
@@ -371,8 +387,6 @@ useEffect(()=>{
                 </div>
               </div>
           </div>
-
-
         </Autocomplete>
 
       </GoogleMap>
@@ -386,15 +400,14 @@ useEffect(()=>{
                 <div className="justify-between  flex w-100">
                   <div className="flex">
                   <Tab
+                  className="mr-2"
                   tab={tab}
                   setTab={setTab}
-                  setSelectedRestaurant={setSelectedRestaurant}
                   tabName ={'history'}/>
 
                   <Tab
                   tab={tab}
                   setTab={setTab}
-                  setSelectedRestaurant={setSelectedRestaurant}
                   tabName ={'favourite'}/>
                   </div>
                   {
@@ -413,12 +426,11 @@ useEffect(()=>{
                     'history': 
                     <div className="overflow-scroll px-2 mt-2"
                     style={{
-                      height: '30vh',
+                      height: '25vh',
                       position: 'sticky',
                       bottom: '0'
                     }}>
                       <div className="p-2 h-100 w-100">
-                        <div className="row p-2">
                           {
                             !isEmpty(tempList) ? 
                               tempList?.map((node,index)=>{
@@ -431,7 +443,7 @@ useEffect(()=>{
                                   setSelectedRestaurant={setSelectedRestaurant}
                                   localList={localList}
                                   setLocalList={setLocalList}
-                                  caseA={'Search'}
+                                  type={'Search'}
                                   />)
                                 })
                                 :<div className='font-bold'
@@ -444,12 +456,11 @@ useEffect(()=>{
                                 "background":  "white",
                                 "color": "#181818"}}>尚無搜尋紀錄</div>
                           }
-                          </div>
                         </div>
                     </div>,
                     'favourite': <div
                     style={{
-                      height: '33vh',
+                      height: '25vh',
                       position: 'sticky',
                       bottom: '0'
                     }}>
@@ -467,7 +478,7 @@ useEffect(()=>{
                               value={sliderValue}
                               disabled={false}
                               marks={false}
-                              max={2}
+                              max={1}
                               step={0.2}
                               min={0}
                               valueLabelDisplay="auto"
@@ -475,7 +486,7 @@ useEffect(()=>{
                             </div>
                           </div>
                           <div className="overflow-scroll h-100">
-                              <div className="row px-4">
+                            <div class="p-2">
                                 {
                                   !isEmpty(filterLocalList)?
                                   filterLocalList?.map((node,index)=>{
@@ -487,7 +498,7 @@ useEffect(()=>{
                                         setSelectedRestaurant= {setSelectedRestaurant}
                                         filterLocalList={filterLocalList}
                                         setLocalList={setLocalList}
-                                        caseA={'fav'}
+                                        type={'fav'}
                                     />)
                                   })
                                   : <div className='font-bold'
@@ -500,7 +511,7 @@ useEffect(()=>{
                                   "background":  "white",
                                   "color": "#181818"}}>尚無資料</div>
                                   }
-                            </div>
+                                  </div>
                           </div>
                         </div>,
                     'random':<div className="fixed w-100 h-100 left-0 top-0 z-[99] flex"

@@ -15,17 +15,6 @@ body {
   width: 100%;
 }
 
-
-/* div[role="dialog"]{
-  background-color: red!important;
-} */
-
-/* .gm-style-iw-t{
-  background-color: red!important;
-} */
-.gm-style-iw-a{
-  /* background-color: red !important; */
-}
 .gm-style,.gm-style-iw-a:first-child{
   display: none  !important;
 }

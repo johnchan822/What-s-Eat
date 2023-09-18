@@ -24,7 +24,7 @@ const Tab =({tab, setTab ,tabName ,handleSpinClick})=>{
          
 
         }}>
-      <div className="p-2 rounded-2"
+      <div className="p-1 rounded-2"
       style={tabStyles[tabName]}>
 
       { function(){

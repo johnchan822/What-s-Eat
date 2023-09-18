@@ -5,7 +5,7 @@ export function useAppState() {
   const [currentPosition, setCurrentPosition] = useState({ lat: 23.553118, lng: 121.0211024 });
   const [tempList, setTempList] = useState([]);
   const [localList, setLocalList] = useState([]);
-  const [sliderValue,setSliderValue] = useState(2);
+  const [sliderValue,setSliderValue] = useState(1);
   const [openingScreen,setOpeningScreen] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState({});
