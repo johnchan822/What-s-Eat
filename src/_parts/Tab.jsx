@@ -9,7 +9,7 @@ const Tab =({tab, setTab ,tabName ,handleSpinClick})=>{
   };
     return (
         <div 
-        className={`tab cursor-pointer px-2 py-2 rounded-2 mx-1 font-bold ${tab === tabName ? 'active btn-info' : 'btn-secondary'}`}
+        className={`col-auto tab mx-2 cursor-pointer p-2 rounded-2  font-bold ${tab === tabName ? 'active btn-info' : 'btn-secondary'}`}
         style={{
           "border":  tab === tabName ? "1px black solid" : "1px solid #d1d1d1",
           "background": 'white',
@@ -26,13 +26,13 @@ const Tab =({tab, setTab ,tabName ,handleSpinClick})=>{
         }}>
       <div className="p-1 rounded-2"
       style={tabStyles[tabName]}>
-
-      { function(){
-        switch(tabName){
-        case 'history' : return (  <ClockHistory  size={20} />)
-        case 'favourite' : return (  <Star  size={20} />)
-        case 'random' : return (  <Dice3  size={20} />)
-      }}()
+      { 
+        function(){
+          switch(tabName){
+            case 'history' : return (  <ClockHistory  size={20} />)
+            case 'favourite' : return (  <Star  size={20} />)
+            case 'random' : return (  <Dice3  size={20} />)
+        }}()
       }
       </div>
       

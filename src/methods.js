@@ -70,5 +70,7 @@ export const countDistance = async (lat1, lng1, lat2, lng2) => {
       return null;
     }
   }
-  return null; // 处理 Google Maps 未加载的情况，返回 null 或其他适当的值
+  return null; 
 };
+
+

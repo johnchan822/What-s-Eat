@@ -8,14 +8,12 @@ import { Wheel } from 'react-custom-roulette'
 import './styles.scss'; // 导入您的Sass文件
 
 import iconImage from './img/icon.png'; // 請確保路徑是正確的
-import iconStar from './img/star.png'; // 請確保路徑是正確的
 import {SignTurnSlightLeft} from 'react-bootstrap-icons';
 import Tab from "./_parts/Tab";
 import Item from "./_parts/Item";
 import  { isEmpty, removeDuplicates, getPhoto, getDistance ,countDistance }  from "./methods";
 import { useAppState } from "./useAppState"; // 引入狀態管理
-import { red } from '@mui/material/colors';
-import { renderToString } from 'react-dom/server';
+import zIndex from '@mui/material/styles/zIndex';
 
 const libraries = ["places"];
 function MyComponent() {
@@ -81,6 +79,8 @@ function MyComponent() {
     autocompleteRef.current = autocomplete;
   };
 
+
+  //初始畫面
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((position) => {
         const { latitude, longitude } = position.coords;
@@ -99,7 +99,6 @@ function MyComponent() {
 
 
 
-  //TODO:
   useEffect(() => {
     // 確保只在有需要時才更新 selectedRestaurant.directions 為空值 但是 selectedRestaurant要有值
     if (!isEmpty(directions) && isEmpty(selectedRestaurant.directions) && !isEmpty(selectedRestaurant)) {
@@ -123,7 +122,16 @@ function MyComponent() {
 }, [onPlaceChanged,setSelectedRestaurant ,selectedRestaurant]);
 
 
-//
+function scrollIntoView (scrollToId){
+    const element = document.getElementById(scrollToId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }else{
+      const element = document.getElementById('scrollTop');
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
 useEffect(()=>{
   //取得資料後 再去算距離
    let localList = JSON.parse(localStorage.getItem('myData')) || []
@@ -185,7 +193,7 @@ useEffect(()=>{
     const  editDistance =  Number(node.directions.split(' ')?.[0] )
     return ({
             ...node,
-            directionNumber : node.directions.includes('公里') ? editDistance :  editDistance / 1000     })
+            directionNumber : node.directions.includes('公里') ? editDistance :  editDistance / 1000 })
     })
 
     return newData?.filter((node)=>{ return node.directionNumber <= sliderValue })
@@ -226,7 +234,7 @@ useEffect(()=>{
   return (
     isLoaded &&
     <>
-    { openingScreen 
+    { (openingScreen &&  !isEmpty(iconImage))
       ? <div className={'overflow-hidden'}>
         <GoogleMap
           id="map"
@@ -250,18 +258,21 @@ useEffect(()=>{
                 key={item.id}
                 icon={{
                   url: '/',
-                  scaledSize: new window.google.maps.Size(120, 50) // 指定宽度和高度
+                  scaledSize: new window.google.maps.Size(120, 50) // 寬度與高度
                 }}
 
                 position={{ lat: item.geometry.location.lat(), lng: item.geometry.location.lng() }}
                 label={{
-                className: `bg-white  rounded border-1  p-1  border-gray-950  cursor-pointer ${ selectedRestaurant?.name == item?.name ? 'opacity-0' :''}`,
-                text: `${ localListNames.includes(item.name) ? "＊" + itemNameSplit + "＊" : itemNameSplit}`,
+                className: `rounded border-1  p-1  border-gray-950  cursor-pointer 
+                ${ selectedRestaurant?.name == item?.name ? 'opacity-0' :''}
+                ${  localListNames.includes(item.name) ?  'bg-main' :'bg-white' }`,
                 color: 'black', 
                 fontWeight: 'bold',
+                text: itemNameSplit,
                 fontSize:'14px'}}
 
               onClick={()=>{
+                localListNames.includes(item.name) ?  setTab('favourite') : setTab('history') 
                 getPhoto(item.place_id).then((imgUrl)=>{
                   setSelectedRestaurant({
                     location:{ lat: item.geometry.location.lat(), lng: item.geometry.location.lng() },
@@ -270,10 +281,9 @@ useEffect(()=>{
                     img:imgUrl,
                   })
                 })
+                scrollIntoView(item.place_id);
+               
               }}>
-
-            
-
               </Marker>
             })
           }
@@ -299,22 +309,29 @@ useEffect(()=>{
               "textDecoration": "none",
             }}>
               <div className="text-center text-black">
-                <div className="flex items-center justify-center border"
+                <div className="flex items-center justify-center"
                  style={{
-                  "backgroundColor": "#e8dbf8"
+                  backgroundColor: "#e8dbf8",
+                  border: '1px solid black',
                   }}>
-                  <div className="m-2 text-[14px] font-bold flex">
-                    <SignTurnSlightLeft size={20} className='mr-2'/> 點選導航：約 {selectedRestaurant.directions}
+                  <div className="p-1.5 text-[13px] font-bold flex">
+                    <SignTurnSlightLeft size={16} className='mr-2'/> 點選導航：約 {selectedRestaurant.directions}
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <img src={selectedRestaurant?.img} 
-                  style={{
-                    maxWidth: '100%',
-                    height: '100px'
-                  }}/>
-                  <div className="font-bold p-2 text-[16px]" style={{
-                    "backgroundColor":  tab === 'history' ?  '#c7edf9' :  '#faf2c7',
+                  <div style={{
+                    backgroundImage: `url(${(selectedRestaurant.img)})`,
+                    width:'220px',
+                    height: '120px',
+                    backgroundSize: 'cover',
+                    backgroundPosition:'center center',
+                    borderLeft: '1px solid black',
+                    borderRight:'1px solid black',
+                  }}>
+                  </div>
+                  <div className="p-1.5 text-[13px] font-bold" style={{
+                    backgroundColor: localList.map((node)=>node.name).includes(selectedRestaurant.name) ? '#faf2c7': '',
+                    border: '1px solid black',
                   }}> 
                   {selectedRestaurant?.name}
                    </div>
@@ -372,6 +389,7 @@ useEffect(()=>{
                       setSearchList(results)
                     }
                   });
+                  setTab('history')
                 }}>1KM 附近好吃的</div>
 
                 <div  className="p-1 rounded-1 text-[14px]"
@@ -392,15 +410,14 @@ useEffect(()=>{
       </GoogleMap>
       <div>
       </div>
-        <div className="absolute w-100 fixed bottom-0 overflow-hidden">
+        <div className="absolute w-100 fixed bottom-0">
             <div className="rounded-t-lg shadow-black">
                 <div className="bg-white pt-2"style={{
                   "borderTop":  "1.2px black solid",
                 }}>
-                <div className="justify-between  flex w-100">
+                <div className="justify-between flex container-lg mb-3">
                   <div className="flex">
                   <Tab
-                  className="mr-2"
                   tab={tab}
                   setTab={setTab}
                   tabName ={'history'}/>
@@ -424,13 +441,13 @@ useEffect(()=>{
                   <div className="container-lg">
                   {{          
                     'history': 
-                    <div className="overflow-scroll px-2 mt-2"
+                    <div 
+                    className="overflow-scroll"
                     style={{
                       height: '25vh',
-                      position: 'sticky',
-                      bottom: '0'
                     }}>
-                      <div className="p-2 h-100 w-100">
+                      <div className="h-100 w-100">
+                         <div id="scrollTop"></div>
                           {
                             !isEmpty(tempList) ? 
                               tempList?.map((node,index)=>{
@@ -443,8 +460,7 @@ useEffect(()=>{
                                   setSelectedRestaurant={setSelectedRestaurant}
                                   localList={localList}
                                   setLocalList={setLocalList}
-                                  type={'Search'}
-                                  />)
+                                  type={'Search'}/>)
                                 })
                                 :<div className='font-bold'
                                 style={{
@@ -458,19 +474,20 @@ useEffect(()=>{
                           }
                         </div>
                     </div>,
-                    'favourite': <div
-                    style={{
-                      height: '25vh',
-                      position: 'sticky',
-                      bottom: '0'
-                    }}>
-                          <div className="row pt-2 mx-2">
+                    'favourite': <div>
+                          <div className="row mx-2"
+                          style={{
+                            zIndex:30
+                          }}>
                               <div className="col-2 font-bold text-[13px]">
                               <div className="col">距離</div>
                               <div className="col">{ sliderValue >=1 ?`${sliderValue}KM`:`${sliderValue *1000}M`}</div>
                             </div>
                             <div className="col-10">
                               <Slider
+                               style={{
+                                zIndex:10
+                              }}
                               aria-label="Temperature"
                               onChange={(e)=>{
                                 setSliderValue(e.target.value)
@@ -485,8 +502,11 @@ useEffect(()=>{
                               defaultValue={20}/>
                             </div>
                           </div>
-                          <div className="overflow-scroll h-100">
-                            <div class="p-2">
+                          <div className="overflow-scroll"
+                           style={{
+                            height: '20vh',
+                          }}>
+                              <div id="scrollTop"></div>
                                 {
                                   !isEmpty(filterLocalList)?
                                   filterLocalList?.map((node,index)=>{
@@ -511,7 +531,6 @@ useEffect(()=>{
                                   "background":  "white",
                                   "color": "#181818"}}>尚無資料</div>
                                   }
-                                  </div>
                           </div>
                         </div>,
                     'random':<div className="fixed w-100 h-100 left-0 top-0 z-[99] flex"
@@ -598,16 +617,12 @@ useEffect(()=>{
           "left": '50%',
           "transform": "translate(-50%, -50%)",
           "background":  "white",
-          "borderTop": '2px white solid',
-          "borderBottom": '2px white solid',
-          "zIndex":30,
-          "color": "#181818"
           }} >
             <img src={iconImage} className="mb-4"
             style={{
               width:"120px"
             }}/>
-            <div>ㄟ！到底吃什麼?</div>
+            <div>ㄟ！到底吃什麼？</div>
             </div>
         </div>
       }
