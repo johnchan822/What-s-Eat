@@ -1,24 +1,23 @@
 import { ClockHistory,Star, Dice3} from 'react-bootstrap-icons';
 
-
 const Tab =({tab, setTab ,tabName ,handleSpinClick})=>{
   const tabStyles = {
-    history: { background: '#c7edf9' },
-    favourite: { background: '#faf2c7' },
-    random: { background: '#d1d1d1' },
+    historyTab: { background: 'var(--color-secondary)' },
+    favouriteTab: { background: 'var(--color-primary)' },
+    randomTab: { background: 'var(--color-grey)' },
   };
     return (
         <div 
         className={`col-auto tab mx-2 cursor-pointer p-2 rounded-2  font-bold ${tab === tabName ? 'active btn-info' : 'btn-secondary'}`}
         style={{
-          "border":  tab === tabName ? "1px black solid" : "1px solid #d1d1d1",
+          "border":  tab === tabName ? "1px black solid" : "1px solid var(--color-grey)",
           "background": 'white',
           "boxShadow":  tab === tabName ? '4px 4px rgba(0,0,0,0.9)': 'none' ,
           // ...((tab === tabName) ? tabStyles[tabName] : {}),
         }}
         onClick={()=>{
           setTab(tabName)
-          if(tabName === 'random'){
+          if(tabName === 'randomTab'){
             handleSpinClick()
           }
          
@@ -29,9 +28,9 @@ const Tab =({tab, setTab ,tabName ,handleSpinClick})=>{
       { 
         function(){
           switch(tabName){
-            case 'history' : return (  <ClockHistory  size={20} />)
-            case 'favourite' : return (  <Star  size={20} />)
-            case 'random' : return (  <Dice3  size={20} />)
+            case 'historyTab' : return (  <ClockHistory  size={20} />)
+            case 'favouriteTab' : return (  <Star  size={20} />)
+            case 'randomTab' : return (  <Dice3  size={20} />)
         }}()
       }
       </div>

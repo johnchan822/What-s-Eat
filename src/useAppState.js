@@ -13,7 +13,7 @@ export function useAppState() {
   const [tab , setTab] = useState('history');
   const [inputValue, setInputValue] = useState('');
   //option 
-  const [prizeNumber, setPrizeNumber] = useState(0);
+  const [prizeNumber, setPrizeNumber] = useState(null);
 
 //輪盤動畫
   const [wheelShowText, setWheelShowText] = useState(false);
