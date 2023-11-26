@@ -24,6 +24,9 @@ export function removeDuplicates (arr) {
 
  export  async function getPhoto(placeId)  {
     const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+    if(isEmpty(service)){
+    return 
+    }
     const request = {
       placeId: placeId,
       fields: ['photos'],
