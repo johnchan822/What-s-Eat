@@ -85,7 +85,7 @@ function App() {
   const tempListDistances = useCallback(() => {
     // directions要有值，(AB點距離都有值) selectedRestaurant.directions 為空值代表還沒被賦予距離
     if (
-      !isEmpty(directions) &&
+      !isEmpty(directions) && 
       isEmpty(selectedRestaurant?.directions) &&
       !isEmpty(selectedRestaurant)
     ) {
