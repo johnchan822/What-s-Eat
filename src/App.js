@@ -27,7 +27,7 @@ function App() {
     const [isEnterView, setIsEnterView] = useState(false); //畫面預覽
     const [autocomplete, setAutocomplete] = useState(null);
 
-    const [selectedRestaurant, setSelectedRestaurant] = useState({});
+    // const [selectedRestaurant, setSelectedRestaurant] = useState({});
     const [directions, setDirections] = useState({});
     const [tab, setTab] = useState('historyTab');
     const [inputValue, setInputValue] = useState('');
@@ -46,6 +46,7 @@ function App() {
         },
         tempList: [],
         localList: [],
+        selectedRestaurant: {},
     });
 
     function updateState(newState) {
@@ -70,12 +71,12 @@ function App() {
         return {
             origin: state.currentPosition,
             destination: {
-                lat: selectedRestaurant?.location?.lat,
-                lng: selectedRestaurant?.location?.lng,
+                lat: state.selectedRestaurant?.location?.lat,
+                lng: state.selectedRestaurant?.location?.lng,
             },
             travelMode: 'WALKING',
         };
-    }, [state.currentPosition, selectedRestaurant]);
+    }, [state.currentPosition, state.selectedRestaurant]);
 
     const autocompleteOptions = {
         fields: ['address_components', 'geometry', 'name', 'place_id'],
@@ -94,22 +95,29 @@ function App() {
     //點選單一餐廳後會計算距離與更新，並將其點選餐廳列表填寫到tempList上面
     const tempListDistances = useCallback(() => {
         // directions要有值，(AB點距離都有值) selectedRestaurant.directions 為空值代表還沒被賦予距離
-        if (!isEmpty(directions) && isEmpty(selectedRestaurant?.directions) && !isEmpty(selectedRestaurant)) {
+        if (
+            !isEmpty(directions) &&
+            isEmpty(state.selectedRestaurant?.directions) &&
+            !isEmpty(state.selectedRestaurant)
+        ) {
             const distanceNumber = directions.routes[0].legs[0].distance.text;
-            const SelectedRestaurantDirections = {
-                ...selectedRestaurant,
+            const selectedRestaurantDirections = {
+                ...state.selectedRestaurant,
                 directions: distanceNumber,
             };
-            setSelectedRestaurant(SelectedRestaurantDirections);
+            updateState({
+                selectedRestaurant: selectedRestaurantDirections,
+            });
+
             //寫入到tempList上面
-            const isDuplicate = state.tempList.some(item => item.placeId === SelectedRestaurantDirections.placeId);
+            const isDuplicate = state.tempList.some(item => item.placeId === selectedRestaurantDirections.placeId);
             if (!isDuplicate) {
                 updateState({
-                    tempList: [...state.tempList, SelectedRestaurantDirections],
+                    tempList: [...state.tempList, selectedRestaurantDirections],
                 });
             }
         }
-    }, [onPlaceChanged, setSelectedRestaurant, selectedRestaurant]);
+    }, [onPlaceChanged, state.selectedRestaurant]);
 
     //距離篩選
     const filterLocalList = useMemo(() => {
@@ -184,7 +192,10 @@ function App() {
                     img: imgUrl,
                 }),
             );
-            setSelectedRestaurant(parseSelectedRestaurant);
+            updateState({
+                selectedRestaurant: parseSelectedRestaurant,
+            });
+            // setSelectedRestaurant(parseSelectedRestaurant);
         });
         setTab('historyTab');
         setInputValue('');
@@ -268,7 +279,7 @@ function App() {
                                             label={{
                                                 className: `rounded border-1  p-1  border-gray-950  cursor-pointer 
                             ${localListNames.includes(item.name) ? 'bg-main' : 'bg-white'}
-                            ${selectedRestaurant?.name === item?.name ? 'opacity-0' : ''}`,
+                            ${state.selectedRestaurant?.name === item?.name ? 'opacity-0' : ''}`,
                                                 backgroundColor: 'red',
                                                 color: 'black',
                                                 fontWeight: 'bold',
@@ -280,14 +291,16 @@ function App() {
                                                     ? setTab('favouriteTab')
                                                     : setTab('historyTab');
                                                 getPhoto(item.place_id).then(imgUrl => {
-                                                    setSelectedRestaurant({
-                                                        location: {
-                                                            lat: item.geometry.location.lat(),
-                                                            lng: item.geometry.location.lng(),
+                                                    updateState({
+                                                        selectedRestaurant: {
+                                                            location: {
+                                                                lat: item.geometry.location.lat(),
+                                                                lng: item.geometry.location.lng(),
+                                                            },
+                                                            placeId: item.place_id,
+                                                            name: item.name,
+                                                            img: imgUrl,
                                                         },
-                                                        placeId: item.place_id,
-                                                        name: item.name,
-                                                        img: imgUrl,
                                                     });
                                                 });
                                                 scrollIntoView(item.place_id);
@@ -295,7 +308,7 @@ function App() {
                                         ></Marker>
                                     );
                                 })}
-                            {!isEmpty(selectedRestaurant?.location) && (
+                            {!isEmpty(state.selectedRestaurant?.location) && (
                                 <>
                                     {/* A-B點路線搜尋 */}
                                     <DirectionsService
@@ -312,13 +325,13 @@ function App() {
 
                                     {/* B點資訊 */}
                                     <InfoWindow
-                                        position={selectedRestaurant?.location}
+                                        position={state.selectedRestaurant?.location}
                                         options={{
                                             zIndex: 100,
                                         }}
                                     >
                                         <a
-                                            href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRestaurant?.location?.lat},${selectedRestaurant?.location?.lng}&dir_action=walk`}
+                                            href={`https://www.google.com/maps/dir/?api=1&destination=${state.selectedRestaurant?.location?.lat},${state.selectedRestaurant?.location?.lng}&dir_action=walk`}
                                             className='location text-[14px]'
                                             style={{
                                                 textDecoration: 'none',
@@ -333,14 +346,14 @@ function App() {
                                                     }}
                                                 >
                                                     <div className='p-1.5 text-[13px] font-bold flex'>
-                                                        <SignTurnSlightLeft size={16} className='mr-2' /> 點選導航：約{' '}
-                                                        {selectedRestaurant.directions}
+                                                        <SignTurnSlightLeft size={16} className='mr-2' /> 點選導航：約
+                                                        {state.selectedRestaurant.directions}
                                                     </div>
                                                 </div>
                                                 <div className='flex flex-col'>
                                                     <div
                                                         style={{
-                                                            backgroundImage: `url(${selectedRestaurant.img})`,
+                                                            backgroundImage: `url(${state.selectedRestaurant.img})`,
                                                             width: '220px',
                                                             height: '120px',
                                                             backgroundSize: 'cover',
@@ -354,13 +367,13 @@ function App() {
                                                         style={{
                                                             backgroundColor: state.localList
                                                                 .map(node => node.name)
-                                                                .includes(selectedRestaurant.name)
+                                                                .includes(state.selectedRestaurant.name)
                                                                 ? 'var(--color-primary)'
                                                                 : '',
                                                             border: '1px solid var(--color-black)',
                                                         }}
                                                     >
-                                                        {selectedRestaurant?.name}
+                                                        {state.selectedRestaurant?.name}
                                                     </div>
                                                 </div>
                                             </div>
@@ -439,8 +452,11 @@ function App() {
                                                 zIndex: '100',
                                             }}
                                             onClick={() => {
-                                                setSelectedRestaurant({});
-                                                setDirections({});
+                                                updateState({
+                                                    selectedRestaurant: {},
+                                                    directions: {},
+                                                });
+                                                // setDirections({});
                                             }}
                                         >
                                             {' '}
@@ -475,7 +491,6 @@ function App() {
                                             </div>
                                         )}
                                     </div>
-                                    {window.console.log(state.tempList)}
                                     <div className='container-lg'>
                                         {
                                             {
@@ -500,9 +515,15 @@ function App() {
                                                                             key={node.placeId}
                                                                             className='cursor-pointer'
                                                                             node={node}
-                                                                            selectedRestaurant={selectedRestaurant}
+                                                                            selectedRestaurant={
+                                                                                state.selectedRestaurant
+                                                                            }
                                                                             localList={state.localList}
-                                                                            onSelected={setSelectedRestaurant}
+                                                                            onSelected={() => {
+                                                                                updateState({
+                                                                                    selectedRestaurant: node,
+                                                                                });
+                                                                            }}
                                                                             onSave={node => {
                                                                                 updateState({
                                                                                     localList: [
@@ -584,8 +605,14 @@ function App() {
                                                                             key={node.placeId}
                                                                             className='cursor-pointer'
                                                                             node={node}
-                                                                            selectedRestaurant={selectedRestaurant}
-                                                                            onSelected={setSelectedRestaurant}
+                                                                            selectedRestaurant={
+                                                                                state.selectedRestaurant
+                                                                            }
+                                                                            onSelected={() => {
+                                                                                updateState({
+                                                                                    selectedRestaurant: node,
+                                                                                });
+                                                                            }}
                                                                             onDeleted={node => {
                                                                                 let b = filterLocalList.filter(
                                                                                     filterNode => {
@@ -672,7 +699,10 @@ function App() {
                                                                                             .join(''),
                                                                                     )
                                                                                 ) {
-                                                                                    setSelectedRestaurant(node);
+                                                                                    updateState({
+                                                                                        selectedRestaurant: node,
+                                                                                    });
+
                                                                                     setIsWheelShowText(true);
                                                                                     setTimeout(() => {
                                                                                         setIsMustSpin(false);
@@ -716,7 +746,7 @@ function App() {
                                                                         你選到的餐廳是
                                                                     </div>
                                                                     <div className='text-[20px]'>
-                                                                        "{selectedRestaurant.name}"
+                                                                        "{state.selectedRestaurant.name}"
                                                                     </div>
                                                                 </div>
                                                             </div>
