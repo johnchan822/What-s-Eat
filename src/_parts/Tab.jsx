@@ -3,7 +3,7 @@ import { ClockHistory, Star, Dice3 } from 'react-bootstrap-icons';
 const Tab = ({ tab, onSelected, tabName, handleSpinClick }) => {
     const tabStyles = {
         historyTab: { background: 'var(--color-secondary)' },
-        favouriteTab: { background: 'var(--color-primary)' },
+        favoriteTab: { background: 'var(--color-primary)' },
         randomTab: { background: 'var(--color-grey)' },
     };
     return (
@@ -12,10 +12,7 @@ const Tab = ({ tab, onSelected, tabName, handleSpinClick }) => {
                 tab === tabName ? 'active btn-info' : 'btn-secondary'
             }`}
             style={{
-                border:
-                    tab === tabName
-                        ? '1px black solid'
-                        : '1px solid var(--color-grey)',
+                border: tab === tabName ? '1px black solid' : '1px solid var(--color-grey)',
                 background: 'white',
                 boxShadow: tab === tabName ? '4px 4px rgba(0,0,0,0.9)' : 'none',
                 // ...((tab === tabName) ? tabStyles[tabName] : {}),
@@ -32,7 +29,7 @@ const Tab = ({ tab, onSelected, tabName, handleSpinClick }) => {
                     switch (tabName) {
                         case 'historyTab':
                             return <ClockHistory size={20} />;
-                        case 'favouriteTab':
+                        case 'favoriteTab':
                             return <Star size={20} />;
                         case 'randomTab':
                             return <Dice3 size={20} />;

@@ -2,7 +2,7 @@ import { Star, XLg } from 'react-bootstrap-icons';
 import { removeDuplicates, isEmpty } from '../methods';
 import { memo } from 'react';
 
-const Item = memo(({ node, selectedRestaurant, localList, filterLocalList, onSave, onDeleted, onSelected, type }) => {
+const Item = memo(({ node, selectedRestaurant, localList, onSave, onDeleted, onSelected, type }) => {
     const existedItem = localList?.find(item => item?.name === node?.name);
     return (
         <div
@@ -48,15 +48,7 @@ const Item = memo(({ node, selectedRestaurant, localList, filterLocalList, onSav
                     onClick={e => {
                         // window.alert(`已刪除 ${node?.name}`)
                         e.stopPropagation();
-                        onDeleted(
-                            node,
-                            // filterLocalList.filter(filterNode => {
-                            //     return filterNode.name !== node.name;
-                            // }),
-                        );
-                        // if (node.name === selectedRestaurant) {
-                        //     onSelected({});
-                        // }
+                        onDeleted(node);
                     }}
                 >
                     <div

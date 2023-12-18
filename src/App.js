@@ -18,35 +18,28 @@ import iconImage from './img/icon.png';
 import { SignTurnSlightLeft } from 'react-bootstrap-icons';
 import Tab from './_parts/Tab';
 import Item from './_parts/Item';
-import { removeDuplicates, isEmpty, getPhoto, countDistance, scrollIntoView } from './methods';
+import { isEmpty, getPhoto, countDistance, scrollIntoView } from './methods';
 
 function App() {
-    // const [currentPosition, setCurrentPosition] = useState({ lat: 0, lng: 0 });
-    // const [localList, setLocalList] = useState([]); // localList列表
-    const [sliderValue, setSliderValue] = useState(1);
-    const [isEnterView, setIsEnterView] = useState(false); //畫面預覽
-    const [autocomplete, setAutocomplete] = useState(null);
-
-    // const [selectedRestaurant, setSelectedRestaurant] = useState({});
-    const [directions, setDirections] = useState({});
-    const [tab, setTab] = useState('historyTab');
-    const [inputValue, setInputValue] = useState('');
-
-    //輪盤動畫
-    const [prizeNumber, setPrizeNumber] = useState(null); //
-    const [isWheelShowText, setIsWheelShowText] = useState(false);
-    const [isMustSpin, setIsMustSpin] = useState(false);
-    const [nearbySearch, setNearbySearch] = useState([]);
     const mapElementRef = useRef(null);
-
     const [state, setState] = useState({
         currentPosition: {
             lat: 0,
             lng: 0,
         },
+        autocomplete: null,
+        tab: 'historyTab',
+        sliderValue: 1,
+        selectedRestaurant: {},
         tempList: [],
         localList: [],
-        selectedRestaurant: {},
+        directions: {},
+        inputValue: '',
+        nearbySearch: [],
+        isWheelShowText: false,
+        isMustSpin: false,
+        isEnterView: false, //畫面預覽
+        prizeNumber: null,
     });
 
     function updateState(newState) {
@@ -57,8 +50,6 @@ function App() {
             };
         });
     }
-
-    // updateState(state.currentPosition);
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
@@ -96,14 +87,13 @@ function App() {
     const tempListDistances = useCallback(() => {
         // directions要有值，(AB點距離都有值) selectedRestaurant.directions 為空值代表還沒被賦予距離
         if (
-            !isEmpty(directions) &&
+            !isEmpty(state.directions) &&
             isEmpty(state.selectedRestaurant?.directions) &&
             !isEmpty(state.selectedRestaurant)
         ) {
-            const distanceNumber = directions.routes[0].legs[0].distance.text;
             const selectedRestaurantDirections = {
                 ...state.selectedRestaurant,
-                directions: distanceNumber,
+                directions: state.directions.routes[0].legs[0].distance.text,
             };
             updateState({
                 selectedRestaurant: selectedRestaurantDirections,
@@ -133,9 +123,9 @@ function App() {
             };
         });
         return newData?.filter(node => {
-            return node.directionNumber <= sliderValue;
+            return node.directionNumber <= state.sliderValue;
         });
-    }, [sliderValue, state.localList, state.currentPosition]);
+    }, [state.sliderValue, state.localList, state.currentPosition]);
 
     //輪盤資料
     const wheelData = useMemo(() => {
@@ -182,32 +172,36 @@ function App() {
     }
 
     function onPlaceChanged() {
-        const place = autocomplete?.getPlace();
-        getPhoto(place?.place_id).then(imgUrl => {
-            const parseSelectedRestaurant = JSON.parse(
-                JSON.stringify({
-                    location: place?.geometry?.location,
-                    placeId: place?.place_id,
-                    name: place?.name,
-                    img: imgUrl,
-                }),
-            );
-            updateState({
-                selectedRestaurant: parseSelectedRestaurant,
+        const place = state?.autocomplete?.getPlace();
+        if (!isEmpty(place?.place_id)) {
+            getPhoto(place?.place_id).then(imgUrl => {
+                const parseSelectedRestaurant = JSON.parse(
+                    JSON.stringify({
+                        location: place?.geometry?.location,
+                        placeId: place?.place_id,
+                        name: place?.name,
+                        img: imgUrl,
+                    }),
+                );
+                updateState({
+                    selectedRestaurant: parseSelectedRestaurant,
+                    tab: 'historyTab',
+                    inputValue: '',
+                });
             });
-            // setSelectedRestaurant(parseSelectedRestaurant);
-        });
-        setTab('historyTab');
-        setInputValue('');
+        }
     }
 
     function handleSpinClick() {
-        const newPrizeNumber = Math.floor(Math.random() * wheelData?.length);
-        setPrizeNumber(newPrizeNumber);
+        updateState({
+            prizeNumber: Math.floor(Math.random() * wheelData?.length),
+        });
         setTimeout(() => {
-            setIsMustSpin(true);
+            updateState({
+                isWheelShowText: false,
+                isMustSpin: true,
+            });
         }, 100);
-        setIsWheelShowText(false);
     }
 
     //先取得目前的座標
@@ -219,11 +213,15 @@ function App() {
     useEffect(() => {
         localListDistances();
         const timeoutId = setTimeout(() => {
-            setIsEnterView(true);
+            updateState({
+                isEnterView: true,
+            });
         }, 1000);
         return () => {
             clearTimeout(timeoutId);
-            setTab('historyTab');
+            updateState({
+                tab: 'historyTab',
+            });
         };
     }, [state.currentPosition]);
 
@@ -233,19 +231,18 @@ function App() {
     }, [tempListDistances]);
 
     //使用，讓function被暫存起來，並且他又是一個callBack函數所以會帶著response值
-    const directionsCallback = useCallback(
-        response => {
-            if (!isEmpty(response)) {
-                setDirections(response);
-            }
-        },
-        [setDirections],
-    );
+    const directionsCallback = useCallback(response => {
+        if (!isEmpty(response)) {
+            updateState({
+                directions: response,
+            });
+        }
+    }, []);
 
     return (
         isLoaded && (
             <>
-                {isEnterView && !isEmpty(iconImage) && state.currentPosition.lat !== 0 ? (
+                {state.isEnterView && !isEmpty(iconImage) && state.currentPosition.lat !== 0 ? (
                     <div className={'overflow-hidden'}>
                         <GoogleMap
                             id='map'
@@ -261,8 +258,8 @@ function App() {
                         >
                             {/* 附近20間餐廳地點 */}
                             <MarkerF position={state.currentPosition}></MarkerF>
-                            {!isEmpty(nearbySearch) &&
-                                nearbySearch.map((item, index) => {
+                            {!isEmpty(state.nearbySearch) &&
+                                state.nearbySearch.map((item, index) => {
                                     const itemNameMore =
                                         item.name.split('').length > 8 ? `${item.name.slice(0, 8) + '...'}` : item.name;
                                     return (
@@ -278,8 +275,8 @@ function App() {
                                             }}
                                             label={{
                                                 className: `rounded border-1  p-1  border-gray-950  cursor-pointer 
-                            ${localListNames.includes(item.name) ? 'bg-main' : 'bg-white'}
-                            ${state.selectedRestaurant?.name === item?.name ? 'opacity-0' : ''}`,
+                                                ${localListNames.includes(item.name) ? 'bg-main' : 'bg-white'}
+                                                ${state.selectedRestaurant?.name === item?.name ? 'opacity-0' : ''}`,
                                                 backgroundColor: 'red',
                                                 color: 'black',
                                                 fontWeight: 'bold',
@@ -287,9 +284,7 @@ function App() {
                                                 fontSize: '14px',
                                             }}
                                             onClick={() => {
-                                                localListNames.includes(item.name)
-                                                    ? setTab('favouriteTab')
-                                                    : setTab('historyTab');
+                                                console.log(localListNames.includes(item.name));
                                                 getPhoto(item.place_id).then(imgUrl => {
                                                     updateState({
                                                         selectedRestaurant: {
@@ -303,7 +298,14 @@ function App() {
                                                         },
                                                     });
                                                 });
-                                                scrollIntoView(item.place_id);
+                                                localListNames.includes(item.name)
+                                                    ? updateState({
+                                                          tab: 'favoriteTab',
+                                                      })
+                                                    : updateState({
+                                                          tab: 'historyTab',
+                                                      });
+                                                scrollIntoView(item?.place_id);
                                             }}
                                         ></Marker>
                                     );
@@ -319,7 +321,7 @@ function App() {
                                     {/* B點渲染 */}
                                     <DirectionsRenderer
                                         options={{
-                                            directions: directions,
+                                            directions: state.directions,
                                         }}
                                     />
 
@@ -384,7 +386,9 @@ function App() {
                             {/* 搜尋框 */}
                             <Autocomplete
                                 onLoad={autocomplete => {
-                                    setAutocomplete(autocomplete);
+                                    updateState({
+                                        autocomplete: autocomplete,
+                                    });
                                 }}
                                 restrictions={{
                                     country: 'tw',
@@ -405,8 +409,12 @@ function App() {
                                         type='text'
                                         className='h-10 w-100 searchInput p-3 mb-1 rounded-1'
                                         placeholder='請搜尋附近的餐廳'
-                                        value={inputValue}
-                                        onChange={e => setInputValue(e.target.value)}
+                                        value={state.inputValue}
+                                        onChange={e =>
+                                            updateState({
+                                                inputValue: e.target.value,
+                                            })
+                                        }
                                         style={{
                                             border: '1.5px var(--color-black) solid',
                                             background: 'white',
@@ -419,7 +427,9 @@ function App() {
                                             style={{
                                                 border: '1px black solid',
                                                 background: 'white',
-                                                boxShadow: !isEmpty(nearbySearch) ? '4px 4px rgba(0,0,0,0.9)' : '',
+                                                boxShadow: !isEmpty(state.nearbySearch)
+                                                    ? '4px 4px rgba(0,0,0,0.9)'
+                                                    : '',
                                             }}
                                             onClick={() => {
                                                 const service = new window.google.maps.places.PlacesService(
@@ -435,10 +445,12 @@ function App() {
                                                 };
                                                 service.nearbySearch(request, (results, status) => {
                                                     if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-                                                        setNearbySearch(results);
+                                                        updateState({
+                                                            nearbySearch: results,
+                                                            tab: 'historyTab',
+                                                        });
                                                     }
                                                 });
-                                                setTab('historyTab');
                                             }}
                                         >
                                             1KM 隨意搜尋好吃的
@@ -456,11 +468,9 @@ function App() {
                                                     selectedRestaurant: {},
                                                     directions: {},
                                                 });
-                                                // setDirections({});
                                             }}
                                         >
-                                            {' '}
-                                            清除{' '}
+                                            清除
                                         </div>
                                     </div>
                                 </div>
@@ -477,14 +487,34 @@ function App() {
                                 >
                                     <div className='justify-between flex container-lg mb-3'>
                                         <div className='flex'>
-                                            <Tab tab={tab} onSelected={setTab} tabName={'historyTab'} />
-                                            <Tab tab={tab} onSelected={setTab} tabName={'favouriteTab'} />
+                                            <Tab
+                                                tab={state.tab}
+                                                onSelected={() => {
+                                                    updateState({
+                                                        tab: 'historyTab',
+                                                    });
+                                                }}
+                                                tabName={'historyTab'}
+                                            />
+                                            <Tab
+                                                tab={state.tab}
+                                                onSelected={() => {
+                                                    updateState({
+                                                        tab: 'favoriteTab',
+                                                    });
+                                                }}
+                                                tabName={'favoriteTab'}
+                                            />
                                         </div>
-                                        {!isEmpty(filterLocalList) && tab === 'favouriteTab' && (
+                                        {!isEmpty(filterLocalList) && state.tab === 'favoriteTab' && (
                                             <div className='mr-2'>
                                                 <Tab
-                                                    tab={tab}
-                                                    onSelected={setTab}
+                                                    tab={state.tab}
+                                                    onSelected={() => {
+                                                        updateState({
+                                                            tab: 'randomTab',
+                                                        });
+                                                    }}
                                                     tabName={'randomTab'}
                                                     handleSpinClick={handleSpinClick}
                                                 />
@@ -503,11 +533,6 @@ function App() {
                                                     >
                                                         <div className='h-100 w-100'>
                                                             <div id='scrollTop'></div>
-
-                                                            {/* updateState({
-                    tempList: [...state.tempList, SelectedRestaurantDirections],
-                }); */}
-
                                                             {!isEmpty(state.tempList) ? (
                                                                 state?.tempList?.map((node, index) => {
                                                                     return (
@@ -562,15 +587,15 @@ function App() {
                                                         </div>
                                                     </div>
                                                 ),
-                                                favouriteTab: (
+                                                favoriteTab: (
                                                     <div>
                                                         <div className='row mx-2 z-[30]'>
                                                             <div className='col-2 font-bold text-[13px]'>
                                                                 <div className='col'>距離</div>
                                                                 <div className='col'>
-                                                                    {sliderValue >= 1
-                                                                        ? `${sliderValue}KM`
-                                                                        : `${sliderValue * 1000}M`}
+                                                                    {state.sliderValue >= 1
+                                                                        ? `${state.sliderValue}KM`
+                                                                        : `${state.sliderValue * 1000}M`}
                                                                 </div>
                                                             </div>
                                                             <div className='col-10'>
@@ -578,9 +603,11 @@ function App() {
                                                                     className='z-[10]'
                                                                     aria-label='Temperature'
                                                                     onChange={e => {
-                                                                        setSliderValue(e.target.value);
+                                                                        updateState({
+                                                                            sliderValue: e.target.value,
+                                                                        });
                                                                     }}
-                                                                    value={sliderValue}
+                                                                    value={state.sliderValue}
                                                                     disabled={false}
                                                                     marks={false}
                                                                     max={1}
@@ -674,8 +701,8 @@ function App() {
                                                                 <>
                                                                     <Wheel
                                                                         spinDuration={0.1}
-                                                                        mustStartSpinning={isMustSpin}
-                                                                        prizeNumber={prizeNumber}
+                                                                        mustStartSpinning={state.isMustSpin}
+                                                                        prizeNumber={state.prizeNumber}
                                                                         backgroundColors={
                                                                             wheelData?.length % 2 === 0
                                                                                 ? ['#c7edf9', '#faf2c7']
@@ -694,7 +721,9 @@ function App() {
                                                                             state.localList.forEach(node => {
                                                                                 if (
                                                                                     node.name.includes(
-                                                                                        wheelData[prizeNumber].option
+                                                                                        wheelData[
+                                                                                            state.prizeNumber
+                                                                                        ].option
                                                                                             .split('...')
                                                                                             .join(''),
                                                                                     )
@@ -702,11 +731,14 @@ function App() {
                                                                                     updateState({
                                                                                         selectedRestaurant: node,
                                                                                     });
-
-                                                                                    setIsWheelShowText(true);
+                                                                                    updateState({
+                                                                                        isWheelShowText: true,
+                                                                                    });
                                                                                     setTimeout(() => {
-                                                                                        setIsMustSpin(false);
-                                                                                        setTab('favouriteTab');
+                                                                                        updateState({
+                                                                                            tab: 'favoriteTab',
+                                                                                            isMustSpin: false,
+                                                                                        });
                                                                                     }, 1000);
                                                                                 }
                                                                             });
@@ -726,7 +758,7 @@ function App() {
                                                                 </>
                                                             }
                                                         </div>
-                                                        {isWheelShowText && (
+                                                        {state.isWheelShowText && (
                                                             <div
                                                                 className='w-100 font-bold'
                                                                 style={{
@@ -753,7 +785,7 @@ function App() {
                                                         )}
                                                     </div>
                                                 ),
-                                            }[tab]
+                                            }[state.tab]
                                         }
                                     </div>
                                 </div>
