@@ -18,11 +18,11 @@ import iconImage from './img/icon.png';
 import { SignTurnSlightLeft } from 'react-bootstrap-icons';
 import Tab from './_parts/Tab';
 import Item from './_parts/Item';
-import { isEmpty, getPhoto, countDistance, scrollIntoView } from './methods';
+import { removeDuplicates, isEmpty, getPhoto, countDistance, scrollIntoView } from './methods';
 
 function App() {
     // const [currentPosition, setCurrentPosition] = useState({ lat: 0, lng: 0 });
-    const [localList, setLocalList] = useState([]); // localList列表
+    // const [localList, setLocalList] = useState([]); // localList列表
     const [sliderValue, setSliderValue] = useState(1);
     const [isEnterView, setIsEnterView] = useState(false); //畫面預覽
     const [autocomplete, setAutocomplete] = useState(null);
@@ -45,6 +45,7 @@ function App() {
             lng: 0,
         },
         tempList: [],
+        localList: [],
     });
 
     function updateState(newState) {
@@ -112,7 +113,7 @@ function App() {
 
     //距離篩選
     const filterLocalList = useMemo(() => {
-        const newData = localList?.map(node => {
+        const newData = state?.localList?.map(node => {
             if (isEmpty(node.directions)) {
                 return {};
             }
@@ -126,7 +127,7 @@ function App() {
         return newData?.filter(node => {
             return node.directionNumber <= sliderValue;
         });
-    }, [sliderValue, localList, state.currentPosition, setLocalList]);
+    }, [sliderValue, state.localList, state.currentPosition]);
 
     //輪盤資料
     const wheelData = useMemo(() => {
@@ -137,11 +138,11 @@ function App() {
             }
             return [...acc, { option: shortName }];
         }, []);
-    }, [filterLocalList, localList]);
+    }, [filterLocalList, state.localList]);
 
     const localListNames = useMemo(() => {
-        return localList.map(node => node.name);
-    }, [localList]);
+        return state.localList.map(node => node.name);
+    }, [state.localList]);
 
     function getCurrentPosition() {
         navigator.geolocation.getCurrentPosition(position => {
@@ -165,7 +166,10 @@ function App() {
             };
         });
         const updatedLocalList = await Promise.all(promises);
-        setLocalList(updatedLocalList);
+        updateState({
+            localList: updatedLocalList,
+        });
+
         return updatedLocalList;
     }
 
@@ -348,7 +352,7 @@ function App() {
                                                     <div
                                                         className='p-1.5 text-[13px] font-bold'
                                                         style={{
-                                                            backgroundColor: localList
+                                                            backgroundColor: state.localList
                                                                 .map(node => node.name)
                                                                 .includes(selectedRestaurant.name)
                                                                 ? 'var(--color-primary)'
@@ -484,6 +488,11 @@ function App() {
                                                     >
                                                         <div className='h-100 w-100'>
                                                             <div id='scrollTop'></div>
+
+                                                            {/* updateState({
+                    tempList: [...state.tempList, SelectedRestaurantDirections],
+                }); */}
+
                                                             {!isEmpty(state.tempList) ? (
                                                                 state?.tempList?.map((node, index) => {
                                                                     return (
@@ -492,9 +501,23 @@ function App() {
                                                                             className='cursor-pointer'
                                                                             node={node}
                                                                             selectedRestaurant={selectedRestaurant}
-                                                                            localList={localList}
+                                                                            localList={state.localList}
                                                                             onSelected={setSelectedRestaurant}
-                                                                            onSave={setLocalList}
+                                                                            onSave={node => {
+                                                                                updateState({
+                                                                                    localList: [
+                                                                                        node,
+                                                                                        ...state.localList,
+                                                                                    ],
+                                                                                });
+                                                                                localStorage.setItem(
+                                                                                    'myData',
+                                                                                    JSON.stringify([
+                                                                                        node,
+                                                                                        ...state.localList,
+                                                                                    ]),
+                                                                                );
+                                                                            }}
                                                                             type={'Search'}
                                                                         />
                                                                     );
@@ -562,10 +585,26 @@ function App() {
                                                                             className='cursor-pointer'
                                                                             node={node}
                                                                             selectedRestaurant={selectedRestaurant}
-                                                                            filterLocalList={filterLocalList}
-                                                                            localList={localList}
                                                                             onSelected={setSelectedRestaurant}
-                                                                            onSave={setLocalList}
+                                                                            onDeleted={node => {
+                                                                                let b = filterLocalList.filter(
+                                                                                    filterNode => {
+                                                                                        return (
+                                                                                            filterNode.name !==
+                                                                                            node.name
+                                                                                        );
+                                                                                    },
+                                                                                );
+
+                                                                                updateState({
+                                                                                    localList: b,
+                                                                                });
+
+                                                                                localStorage.setItem(
+                                                                                    'myData',
+                                                                                    JSON.stringify([node, ...b]),
+                                                                                );
+                                                                            }}
                                                                             type={'Fav'}
                                                                         />
                                                                     );
@@ -625,7 +664,7 @@ function App() {
                                                                         fontSize={18}
                                                                         data={wheelData}
                                                                         onStopSpinning={value => {
-                                                                            localList.forEach(node => {
+                                                                            state.localList.forEach(node => {
                                                                                 if (
                                                                                     node.name.includes(
                                                                                         wheelData[prizeNumber].option
