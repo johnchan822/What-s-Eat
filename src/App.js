@@ -34,6 +34,7 @@ function App() {
         tempList: [],
         localList: [],
         directions: {},
+        directionsText: '',
         inputValue: '',
         nearbySearch: [],
         isWheelShowText: false,
@@ -57,7 +58,7 @@ function App() {
         libraries: ['places'],
         language: 'zh-TW',
     });
-
+    //A-B距離參數設定
     const directionsServiceOptions = useMemo(() => {
         return {
             origin: state.currentPosition,
@@ -68,7 +69,7 @@ function App() {
             travelMode: 'WALKING',
         };
     }, [state.currentPosition, state.selectedRestaurant]);
-
+    //下拉搜尋參數設定
     const autocompleteOptions = {
         fields: ['address_components', 'geometry', 'name', 'place_id'],
         types: ['restaurant', 'food'],
@@ -82,52 +83,25 @@ function App() {
             west: state.currentPosition.lng - 0.008,
         },
     };
-
-    //點選單一餐廳後會計算距離與更新，並將其點選餐廳列表填寫到tempList上面
-    const tempListDistances = useCallback(() => {
-        // directions要有值，(AB點距離都有值) selectedRestaurant.directions 為空值代表還沒被賦予距離
-        if (
-            !isEmpty(state.directions) &&
-            isEmpty(state.selectedRestaurant?.directions) &&
-            !isEmpty(state.selectedRestaurant)
-        ) {
-            const selectedRestaurantDirections = {
-                ...state.selectedRestaurant,
-                directions: state.directions.routes[0].legs[0].distance.text,
-            };
-            updateState({
-                selectedRestaurant: selectedRestaurantDirections,
-            });
-
-            //寫入到tempList上面
-            const isDuplicate = state.tempList.some(item => item.placeId === selectedRestaurantDirections.placeId);
-            if (!isDuplicate) {
-                updateState({
-                    tempList: [...state.tempList, selectedRestaurantDirections],
-                });
-            }
-        }
-    }, [onPlaceChanged, state.selectedRestaurant]);
-
-    //距離篩選
+    //FavTab距離篩選
     const filterLocalList = useMemo(() => {
-        const newData = state?.localList?.map(node => {
-            if (isEmpty(node.directions)) {
-                return {};
-            }
-            const editDistance = Number(node.directions.split(' ')?.[0]);
-
-            return {
-                ...node,
-                directionNumber: node.directions?.includes('公里') ? editDistance : editDistance / 1000,
-            };
-        });
-        return newData?.filter(node => {
-            return node.directionNumber <= state.sliderValue;
-        });
+        return state?.localList
+            ?.map(node => {
+                if (isEmpty(node.directions)) {
+                    return {};
+                }
+                const editDistance = Number(node.directions.split(' ')?.[0]);
+                return {
+                    ...node,
+                    directionNumber: node.directions?.includes('公里') ? editDistance : editDistance / 1000,
+                };
+            })
+            .filter(node => {
+                return node.directionNumber <= state.sliderValue;
+            });
     }, [state.sliderValue, state.localList, state.currentPosition]);
 
-    //輪盤資料
+    //RandomTab輪盤資料
     const wheelData = useMemo(() => {
         return filterLocalList?.reduce((acc, node) => {
             let shortName = node.name;
@@ -137,7 +111,7 @@ function App() {
             return [...acc, { option: shortName }];
         }, []);
     }, [filterLocalList, state.localList]);
-
+    //RandomTab輪盤名稱
     const localListNames = useMemo(() => {
         return state.localList.map(node => node.name);
     }, [state.localList]);
@@ -145,30 +119,29 @@ function App() {
     function getCurrentPosition() {
         navigator.geolocation.getCurrentPosition(position => {
             const { latitude, longitude } = position?.coords;
-            updateState({ currentPosition: { lat: latitude, lng: longitude } });
+            updateState({ currentPosition: { lat: latitude, lng: longitude }, isEnterView: true });
         });
     }
-
-    async function localListDistances() {
+    //getLocalStorageList距離計算並將結果再回傳到list，配合FavTab距離篩選，不能採用directionsCallback，directionsCallback是點選後才能計算
+    async function getLocalStorageList() {
         let localList = JSON.parse(localStorage.getItem('myData')) || [];
-        const promises = localList?.map(async node => {
-            const directions = await countDistance(
-                state.currentPosition?.lat,
-                state.currentPosition?.lng,
-                node.location?.lat,
-                node.location?.lng,
-            );
-            return {
-                ...node,
-                directions,
-            };
-        });
-        const updatedLocalList = await Promise.all(promises);
+        let updateLocalList = await Promise.all(
+            localList?.map(async node => {
+                return {
+                    ...node,
+                    directions: await countDistance(
+                        state.currentPosition?.lat,
+                        state.currentPosition?.lng,
+                        node.location?.lat,
+                        node.location?.lng,
+                    ),
+                };
+            }),
+        );
         updateState({
-            localList: updatedLocalList,
+            localList: updateLocalList,
         });
-
-        return updatedLocalList;
+        return localList;
     }
 
     function onPlaceChanged() {
@@ -191,7 +164,6 @@ function App() {
             });
         }
     }
-
     function handleSpinClick() {
         updateState({
             prizeNumber: Math.floor(Math.random() * wheelData?.length),
@@ -204,40 +176,37 @@ function App() {
         }, 100);
     }
 
-    //先取得目前的座標
+    //一開始的畫面，會先取得目前位置
     useEffect(() => {
         getCurrentPosition();
     }, []);
 
-    //將計算的距離回傳,預設畫面
+    //有了目前位置後才能取得localList資料，因為要計算距離
     useEffect(() => {
-        localListDistances();
-        const timeoutId = setTimeout(() => {
-            updateState({
-                isEnterView: true,
-            });
-        }, 1000);
-        return () => {
-            clearTimeout(timeoutId);
-            updateState({
-                tab: 'historyTab',
-            });
-        };
+        getLocalStorageList();
     }, [state.currentPosition]);
 
-    //計算出tempListDistances 裡面的約多少公里的距離
-    useEffect(() => {
-        tempListDistances();
-    }, [tempListDistances]);
-
-    //使用，讓function被暫存起來，並且他又是一個callBack函數所以會帶著response值
+    //插件提供的API，可以直接計算出距離
     const directionsCallback = useCallback(response => {
         if (!isEmpty(response)) {
             updateState({
                 directions: response,
+                directionsText: response.routes[0].legs[0].distance.text,
             });
         }
     }, []);
+
+    //如果有selectedRestaurant那tempList暫存的列表就會更新
+    useEffect(() => {
+        if (!isEmpty(state.selectedRestaurant)) {
+            const isDuplicate = state.tempList.some(item => item.placeId === state.selectedRestaurant.placeId);
+            if (!isDuplicate) {
+                updateState({
+                    tempList: [...state.tempList, state.selectedRestaurant],
+                });
+            }
+        }
+    }, [onPlaceChanged, state.selectedRestaurant]);
 
     return (
         isLoaded && (
@@ -349,7 +318,7 @@ function App() {
                                                 >
                                                     <div className='p-1.5 text-[13px] font-bold flex'>
                                                         <SignTurnSlightLeft size={16} className='mr-2' /> 點選導航：約
-                                                        {state.selectedRestaurant.directions}
+                                                        {state.directionsText}
                                                     </div>
                                                 </div>
                                                 <div className='flex flex-col'>
@@ -563,6 +532,7 @@ function App() {
                                                                                         ...state.localList,
                                                                                     ]),
                                                                                 );
+                                                                                getLocalStorageList();
                                                                             }}
                                                                             type={'Search'}
                                                                         />
@@ -641,7 +611,7 @@ function App() {
                                                                                 });
                                                                             }}
                                                                             onDeleted={node => {
-                                                                                let b = filterLocalList.filter(
+                                                                                let list = filterLocalList.filter(
                                                                                     filterNode => {
                                                                                         return (
                                                                                             filterNode.name !==
@@ -651,12 +621,11 @@ function App() {
                                                                                 );
 
                                                                                 updateState({
-                                                                                    localList: b,
+                                                                                    localList: list,
                                                                                 });
-
                                                                                 localStorage.setItem(
                                                                                     'myData',
-                                                                                    JSON.stringify([node, ...b]),
+                                                                                    JSON.stringify(list),
                                                                                 );
                                                                             }}
                                                                             type={'Fav'}
