@@ -327,6 +327,7 @@ function App() {
                                                         style={{
                                                             backgroundImage: `url(${state.selectedRestaurant.img})`,
                                                             width: '220px',
+                                                            maxWidth: '100%',
                                                             height: '120px',
                                                             backgroundSize: 'cover',
                                                             backgroundPosition: 'center center',
