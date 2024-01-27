@@ -83,6 +83,7 @@ function App() {
             west: state.currentPosition.lng - 0.008,
         },
     };
+
     //FavTab距離篩選
     const filterLocalList = useMemo(() => {
         return state?.localList
@@ -111,6 +112,7 @@ function App() {
             return [...acc, { option: shortName }];
         }, []);
     }, [filterLocalList, state.localList]);
+
     //RandomTab輪盤名稱
     const localListNames = useMemo(() => {
         return state.localList.map(node => node.name);
@@ -253,7 +255,6 @@ function App() {
                                                 fontSize: '14px',
                                             }}
                                             onClick={() => {
-                                                console.log(localListNames.includes(item.name));
                                                 getPhoto(item.place_id).then(imgUrl => {
                                                     updateState({
                                                         selectedRestaurant: {
@@ -699,8 +700,6 @@ function App() {
                                                                                 ) {
                                                                                     updateState({
                                                                                         selectedRestaurant: node,
-                                                                                    });
-                                                                                    updateState({
                                                                                         isWheelShowText: true,
                                                                                     });
                                                                                     setTimeout(() => {
