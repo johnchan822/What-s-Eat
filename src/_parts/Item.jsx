@@ -8,7 +8,7 @@ const Item = memo(({ node, selectedRestaurant, localList, onSave, onDeleted, onS
         <div
             id={node.placeId}
             className={
-                'text-[14px] flex cursor-pointer m-2 mb-3 flex-nowrap items-center justify-between rounded-2 p-2'
+                'text-[14px] flex cursor-pointer m-2 mb-2 flex-nowrap items-center justify-between rounded-2 p-2'
             }
             style={{
                 border: node?.name === selectedRestaurant?.name ? '1px black solid' : '1px solid var(--color-grey)',
