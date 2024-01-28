@@ -33,8 +33,8 @@ function App() {
         selectedRestaurant: {},
         tempList: [],
         localList: [],
-        directions: {},
-        directionsText: '',
+        distance: {},
+        distanceText: '',
         inputValue: '',
         nearbySearch: [],
         isWheelShowText: false,
@@ -88,13 +88,13 @@ function App() {
     const filterLocalList = useMemo(() => {
         return state?.localList
             ?.map(node => {
-                if (isEmpty(node.directions)) {
+                if (isEmpty(node.distance)) {
                     return {};
                 }
-                const editDistance = Number(node.directions.split(' ')?.[0]);
+                const editDistance = Number(node.distance.split(' ')?.[0]);
                 return {
                     ...node,
-                    directionNumber: node.directions?.includes('公里') ? editDistance : editDistance / 1000,
+                    directionNumber: node.distance?.includes('公里') ? editDistance : editDistance / 1000,
                 };
             })
             .filter(node => {
@@ -131,7 +131,7 @@ function App() {
             localList?.map(async node => {
                 return {
                     ...node,
-                    directions: await countDistance(
+                    distance: await countDistance(
                         state.currentPosition?.lat,
                         state.currentPosition?.lng,
                         node.location?.lat,
@@ -192,8 +192,8 @@ function App() {
     const directionsCallback = useCallback(response => {
         if (!isEmpty(response)) {
             updateState({
-                directions: response,
-                directionsText: response.routes[0].legs[0].distance.text,
+                distance: response,
+                distanceText: response.routes[0].legs[0].distance.text,
             });
         }
     }, []);
@@ -291,7 +291,7 @@ function App() {
                                     {/* B點渲染 */}
                                     <DirectionsRenderer
                                         options={{
-                                            directions: state.directions,
+                                            directions: state.distance,
                                         }}
                                     />
 
@@ -318,15 +318,16 @@ function App() {
                                                     }}
                                                 >
                                                     <div className='p-1.5 text-[13px] font-bold flex'>
-                                                        <SignTurnSlightLeft size={16} className='mr-2' /> 點選導航：約
-                                                        {state.directionsText}
+                                                        <SignTurnSlightLeft size={16} className='mr-2' />{' '}
+                                                        點選導航：約&nbsp;
+                                                        {state.distanceText}
                                                     </div>
                                                 </div>
                                                 <div className='flex flex-col'>
                                                     <div
                                                         style={{
                                                             backgroundImage: `url(${state.selectedRestaurant.img})`,
-                                                            width: '220px',
+                                                            minWidth: '220px',
                                                             maxWidth: '100%',
                                                             height: '120px',
                                                             backgroundSize: 'cover',

@@ -2,7 +2,7 @@ import { Star, XLg } from 'react-bootstrap-icons';
 import { removeDuplicates, isEmpty } from '../methods';
 import { memo } from 'react';
 
-const Item = memo(({ node, selectedRestaurant, localList, onSave, onDeleted, onSelected, type }) => {
+const Item = memo(({ node, selectedRestaurant, type, localList, onSave, onDeleted, onSelected }) => {
     const existedItem = localList?.find(item => item?.name === node?.name);
     return (
         <div
